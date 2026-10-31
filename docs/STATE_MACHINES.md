@@ -12,9 +12,10 @@ Each successful subscription transition writes a `StatusLog` row. Illegal transi
 | confirmed → active | system (`activate_due`) / staff, admin button | `start_date <= today` | `SUBSCRIPTION_ACTIVATED` notification |
 | active → paused | staff, admin | `plan.allow_pause` | billing skips it |
 | paused → active | staff, admin | — | `next_invoice_date = max(existing, today)` (D-014, no back-billing) |
-| active → closed | staff, admin | early close needs `plan.allow_early_close`; engine auto-close needs `plan.auto_close` and nothing left to bill | stops billing |
-| closed/active → renewed (stays active) | staff, admin | `plan.allow_renew` | `expiry_date += (original expiry − start)` |
-| any non-closed → closed | admin | — (override) | logged |
+| active → closed | staff, admin | early close needs `plan.allow_early_close` (admin may override); engine auto-close (Phase 4) needs `plan.auto_close` and nothing left to bill | stops billing |
+| *renew* (action, not a status) | staff, admin | status `active`, has `expiry_date`, `plan.allow_renew` | `expiry_date += (expiry − start)`; stays `active`; no status-log row (D-036) |
+| draft / quotation / confirmed → closed | staff, admin | — (no plan flag needed before activation) | logged |
+| active / paused → closed (override) | admin | admin may close regardless of `allow_early_close` | logged |
 
 ```mermaid
 stateDiagram-v2
