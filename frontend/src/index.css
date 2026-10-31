@@ -2,6 +2,150 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Design tokens: the whole look is tweakable here (see frontend/README.md) ----
+   Palette follows Apple's system colours: blue #0A84FF accent, green #30D158, orange #FF9F0A, red #FF453A, neutral greys. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f5f7; --bg2: #ececf1;
+  --fg: #1d1d1f; --fg2: #6e6e73; --muted: #76767b;
+  --accent: #0071e3; /* text/links; Apple blue, AA on white */
+  --glass: rgba(255, 255, 255, 0.55); --glass-solid: rgba(255, 255, 255, 0.96); --sticky: #f7f7f9;
+  --glass-hi: rgba(255, 255, 255, 0.9); --glass-border: rgba(0, 0, 0, 0.07); --glass-inset: rgba(255, 255, 255, 0.8);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
+  --spot: rgba(0, 113, 227, 0.1); --grid: rgba(0, 0, 0, 0.07); --tip: rgba(255, 255, 255, 0.94);
+  --sel: rgba(0, 0, 0, 0.06); --tile: rgba(0, 0, 0, 0.035); --seg-thumb: #ffffff;
+  --ok: #30d158; --ok-t: #1f7a3a; --warn: #ff9f0a; --warn-t: #a85d00; --bad: #ff453a; --bad-t: #c4281f; --info: #0a84ff; --info-t: #0062c4;
+  --radius-w: 20px; --blur: 24px;
+}
+:root[data-theme="dark"],
+.dark-scope { /* .dark-scope = dark tokens for one region (the home widgets) while the rest of the page stays light */
+  color-scheme: dark;
+  --bg: #000000; --bg2: #111113;
+  --fg: #f5f5f7; --fg2: #a1a1a6; --muted: #8e8e93;
+  --accent: #2997ff;
+  --glass: rgba(44, 44, 46, 0.55); --glass-solid: rgba(28, 28, 30, 0.96); --sticky: #1c1c1e;
+  --glass-hi: rgba(255, 255, 255, 0.18); --glass-border: rgba(255, 255, 255, 0.09); --glass-inset: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --spot: rgba(255, 255, 255, 0.06); --grid: rgba(255, 255, 255, 0.08); --tip: rgba(28, 28, 30, 0.92);
+  --sel: rgba(255, 255, 255, 0.1); --tile: rgba(255, 255, 255, 0.05); --seg-thumb: rgba(255, 255, 255, 0.18);
+  --ok-t: #63e68a; --warn-t: #ffb340; --bad-t: #ff6961; --info-t: #64a9ff;
+}
+
+body {
+  background: linear-gradient(180deg, var(--bg), var(--bg2)) fixed;
+  color: var(--fg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.003em;
+}
+.theme-fade, .theme-fade * { transition: background-color 0.4s, color 0.4s, border-color 0.4s !important; }
+
+/* ---- The glass recipe: every widget, bar and popover uses this ---- */
+.glass {
+  position: relative;
+  border-radius: var(--radius-w);
+  background-color: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-inset);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.glass::before { /* faint top-left highlight edge */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0.5;
+  background: linear-gradient(135deg, var(--glass-hi), transparent 40%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.glass::after { /* cursor spotlight */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), var(--spot), transparent 60%);
+}
+.glass:not(.glass-flat):hover { transform: translateY(-2px); }
+.glass:not(.glass-flat):hover::after { opacity: 1; }
+.glass-flat::after { display: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background-color: var(--glass-solid); }
+}
+
+.dark-scope { --glass: rgba(28, 28, 30, 0.82); --blur: 18px; } /* more opaque so dark cards read clearly on the light page */
+
+/* highlighted KPI (the reference's filled green card): a sage gradient glass tile with light text */
+.hi > .glass { background-image: linear-gradient(135deg, rgba(64, 156, 255, 0.92), rgba(0, 113, 227, 0.95)); border-color: rgba(255, 255, 255, 0.25); color: #fff; }
+.hi > .glass .text-fg2, .hi > .glass .text-muted { color: rgba(255, 255, 255, 0.82); }
+.hi > .glass .pill-ok, .hi > .glass .pill-bad { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+/* solid card for legacy CRUD pages and auth forms, legible in both themes */
+.sheet {
+  color-scheme: light; /* native inputs stay light even in the dark theme */
+  background: #ffffff; color: #1d1d1f; border: 1px solid var(--glass-border); border-radius: var(--radius-w); padding: 1.5rem; box-shadow: var(--glass-shadow);
+}
+
+
+/* ---- Tables on sheets: sage header band, zebra rows, soft hover, rounded frame ---- */
+.sheet div.overflow-x-auto { border-radius: 16px; border-color: rgba(0, 113, 227, 0.2); background: #fff; }
+.sheet table { border-collapse: separate; border-spacing: 0; width: 100%; }
+.sheet thead th {
+  background: linear-gradient(180deg, rgba(64, 156, 255, 0.2), rgba(0, 113, 227, 0.14));
+  color: #1d3557; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap;
+  padding-top: 0.75rem; padding-bottom: 0.75rem;
+}
+.sheet tbody tr { transition: background-color 0.15s; }
+.sheet tbody tr:nth-child(even) { background: rgba(0, 113, 227, 0.045); }
+.sheet tbody tr:hover { background: rgba(0, 113, 227, 0.11); }
+.sheet tbody td { border-top: 1px solid rgba(0, 113, 227, 0.12); }
+.sheet tbody tr:first-child td { border-top: 0; }
+.sheet tfoot td { background: rgba(0, 113, 227, 0.08); font-weight: 600; }
+
+/* ---- Sheet polish: frosted card, bigger title, gradient chips, pill badges, calmer controls ---- */
+.sheet {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.74));
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 28px; padding: 1.75rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 20px 50px rgba(20, 30, 60, 0.12);
+}
+.sheet h1 { font-size: 1.65rem; font-weight: 650; letter-spacing: -0.025em; }
+.sheet h2 { font-weight: 600; letter-spacing: -0.015em; }
+/* filter chips: round buttons; the selected one is a blue gradient with a glow */
+.sheet button.rounded-full { border: 1px solid rgba(0, 113, 227, 0.22); background: rgba(255, 255, 255, 0.75); color: #3a3a3c; padding: 0.4rem 0.95rem; font-weight: 500; transition: transform 0.15s, box-shadow 0.15s, background 0.15s; }
+.sheet button.rounded-full:hover { background: #fff; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.15); transform: translateY(-1px); }
+.sheet button.rounded-full.bg-sky-600 { background-image: linear-gradient(180deg, #409cff, #0071e3); border-color: transparent; color: #fff; box-shadow: 0 6px 16px rgba(0, 113, 227, 0.4); }
+/* buttons and inputs */
+.sheet button.rounded.border, .sheet input.rounded.border, .sheet select.rounded.border { border-radius: 12px; border-color: rgba(60, 60, 67, 0.18); background: rgba(255, 255, 255, 0.85); }
+.sheet button.rounded.border:hover:not(:disabled) { background: #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); }
+.sheet button.rounded.bg-indigo-600, .sheet button.rounded.bg-sky-600 { border-radius: 12px; background-image: linear-gradient(180deg, #409cff, #0071e3); box-shadow: 0 6px 16px rgba(0, 113, 227, 0.35); }
+.sheet input:focus-visible, .sheet select:focus-visible { box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2); border-color: #0a84ff; }
+/* status badges and flags become pills; links and money read cleanly */
+.sheet span.rounded.capitalize { border-radius: 999px; padding: 0.2rem 0.7rem; letter-spacing: 0.01em; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); }
+.sheet span.rounded.bg-red-600 { border-radius: 999px; padding: 0.2rem 0.7rem; white-space: nowrap; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35); }
+.sheet tbody td { padding-top: 0.85rem; padding-bottom: 0.85rem; font-variant-numeric: tabular-nums; }
+.sheet tbody td a { white-space: nowrap; font-weight: 600; color: #0071e3; }
+.sheet tbody td a:hover { text-decoration: underline; }
+
+/* ---- Small pieces ---- */
+.tip { background: var(--tip); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: var(--glass-shadow); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); }
+.skeleton { border-radius: 12px; background: linear-gradient(100deg, var(--tile) 30%, var(--sel) 50%, var(--tile) 70%) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+.pill-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-t); }
+.pill-warn { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn-t); }
+.pill-bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad-t); }
+.pill-info { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--info-t); }
+.pill-neutral { background: var(--sel); color: var(--fg2); }
+.shimmer-edge::before { opacity: 1; background: linear-gradient(110deg, transparent 25%, #0a84ff, #64d2ff, transparent 75%) 0 0 / 250% 100%; animation: edge 6s linear infinite; }
+@keyframes edge { to { background-position: -250% 0; } }
+
+:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.5); }
+@media (pointer: coarse) { .tap { min-height: 44px; min-width: 44px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton, .shimmer-edge::before, .animate-ping, .animate-pulse { animation: none !important; }
+  .glass { transition: none; }
+  .glass:not(.glass-flat):hover { transform: none; }
+}
+
 @media print {
   nav, .no-print { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .sheet { box-shadow: none !important; padding: 0 !important; border: 0 !important; }
 }

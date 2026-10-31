@@ -10,11 +10,13 @@ Odoo Community 18.0 (XML-RPC) as accounting ledger. Session cookie + CSRF, same 
 
 ## Folder map
 - `backend/config/` settings, urls, `health.py` (`/api/healthz`)
-- `backend/apps/{accounts,catalog,subscriptions,billing,discounts,payments,notifications,dashboard}/`
+- `backend/apps/core/{accounts,catalog,subscriptions,billing}/` (person A) and `backend/apps/finance/{discounts,payments,notifications,dashboard}/` (person B)
+  — import as `apps.core.<app>` / `apps.finance.<app>`; app labels unchanged. Ownership + workflow: `docs/TEAM.md`
 - `backend/integrations/odoo/client.py` — the ONLY place that talks to Odoo (+ `mappers.py`, `sync.py` when built)
 - `backend/integrations/whatsapp/` — provider adapters (Phase 7)
 - `backend/scripts/` `odoo_smoke.py`, `odoo_bootstrap.py`, `seed_demo.py`, `perf_check.py`
-- `frontend/src/{api,components,pages}/`, `routes.tsx` — config-driven kit (see `docs/FRONTEND.md`)
+- `frontend/src/{api,auth,components,pages}/` shared kit + auth pages; `frontend/src/features/ops/` (person C) and `features/insight/` (person D),
+  each with its own `routes.tsx` (routes + nav). Add screens there, not in `src/routes.tsx` (see `docs/FRONTEND.md`, `docs/TEAM.md`)
 - `odoo/config/odoo.conf`, `odoo/addons/`; `docs/` all specs; `docs/DECISIONS.md` decision log
 
 ## Commands (no `make` on Windows → use the raw command)
@@ -41,7 +43,7 @@ Odoo Community 18.0 (XML-RPC) as accounting ledger. Session cookie + CSRF, same 
 - **Billing**: UNIQUE (subscription, period_start) + `select_for_update(skip_locked)`; catch-up ≤ 12 periods; never past expiry.
 - **Notifications**: always through `notify()`; UNIQUE `dedupe_key`; sending never fails the originating request.
 - **UI**: config objects feeding `DataTable`, `ResourceForm`, `StatusBadge`, `ConfirmButton`, `RoleGuard`, `MoneyText`. No bespoke pages.
-- **Roles**: `admin | staff | customer` on `User.role`. Public signup creates customers only.
+- **Roles**: `admin | staff | customer` on `User.role`. Public signup creates customers; staff/admin signup needs a server-side code (D-044).
 
 ## Working rules (condensed from KICKOFF §0)
 1. Phase by phase; don't start N+1 until N's acceptance checks pass (run them, show output).
