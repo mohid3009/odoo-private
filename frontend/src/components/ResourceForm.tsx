@@ -11,6 +11,7 @@ export type FieldType =
 export interface OptionsFrom {
   endpoint: string;
   label: (row: any) => string;
+  expand?: (rows: any[]) => { value: string; label: string }[]; // one row -> many options (e.g. product variants)
 }
 
 export interface Field {
@@ -45,7 +46,7 @@ const input = "w-full rounded border border-slate-300 px-3 py-2 focus:border-ind
 const MONEY = /^-?\d+(\.\d{1,2})?$/;
 
 // DRF error bodies: {field: [msg]}, {detail: msg}, or nested {profile: {field: [msg]}} -> flat {field: msg}
-function flatten(body: unknown, out: Record<string, string> = {}): Record<string, string> {
+export function flatten(body: unknown, out: Record<string, string> = {}): Record<string, string> {
   if (body && typeof body === "object") {
     for (const [k, v] of Object.entries(body as Record<string, unknown>)) {
       if (Array.isArray(v)) out[k] = v.map((x) => (typeof x === "object" ? Object.values(x as object).flat().join(" ") : String(x))).join(" ");
@@ -63,7 +64,20 @@ function useOptions(f: Field) {
     queryFn: () => api.get<Page<any>>(`${f.optionsFrom!.endpoint}?page_size=200`),
   });
   if (!f.optionsFrom) return f.options ?? [];
-  return (q.data?.results ?? []).map((r) => ({ value: String(r.id), label: f.optionsFrom!.label(r) }));
+  const rows = q.data?.results ?? [];
+  if (f.optionsFrom.expand) return f.optionsFrom.expand(rows);
+  return rows.map((r) => ({ value: String(r.id), label: f.optionsFrom!.label(r) }));
+}
+
+// A select inside a `lines` row (its own component because useOptions is a hook).
+function LineSelect({ f, form, name }: { f: Field; form: Form; name: string }) {
+  const options = useOptions(f);
+  return (
+    <select aria-label={f.label} className={`${input} w-auto min-w-0 flex-1`} {...form.register(name, rules(f, form))}>
+      <option value="">{f.placeholder ?? (f.required ? "Select…" : "—")}</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
 }
 
 function rules(f: Field, form: Form) {
@@ -122,7 +136,9 @@ function Lines({ f, form }: { f: Field; form: Form }) {
       {fields.map((row, i) => (
         <div key={row.id} className="flex flex-wrap items-start gap-2 rounded border bg-slate-50 p-2">
           <input type="hidden" {...form.register(`${f.name}.${i}._id`)} />
-          {subs.map((s) => (
+          {subs.map((s) => s.type === "select" ? (
+            <LineSelect key={s.name} f={s} form={form} name={`${f.name}.${i}.${s.name}`} />
+          ) : (
             <input key={s.name} aria-label={s.label} placeholder={s.label} inputMode={s.type === "money" ? "decimal" : undefined}
               className={`${input} w-auto min-w-0 flex-1`} {...form.register(`${f.name}.${i}.${s.name}`, rules(s, form))} />
           ))}
@@ -138,7 +154,7 @@ function Lines({ f, form }: { f: Field; form: Form }) {
 
 export default function ResourceForm({ fields, submitLabel, onSubmit, defaultValues, onSuccess, onCancel, successMessage, resetOnSuccess }: Props) {
   const form = useForm<Record<string, any>>({ defaultValues });
-  const { handleSubmit, setError, reset, formState } = form;
+  const { handleSubmit, setError, clearErrors, reset, formState } = form;
   const { errors, isSubmitting } = formState;
   const [done, setDone] = useState(false);
 
@@ -167,7 +183,8 @@ export default function ResourceForm({ fields, submitLabel, onSubmit, defaultVal
   });
 
   return (
-    <form onSubmit={submit} className="space-y-4" noValidate>
+    // clearErrors first: a server error set with setError on a rule-less field (e.g. a `lines` list) would otherwise block every resubmit
+    <form onSubmit={(e) => { clearErrors(); return submit(e); }} className="space-y-4" noValidate>
       {errors.root?.server && <p role="alert" className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{errors.root.server.message}</p>}
       {done && successMessage && <p role="status" className="rounded bg-green-50 px-3 py-2 text-sm text-green-800">{successMessage}</p>}
       {fields.map((f) => {
