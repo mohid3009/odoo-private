@@ -19,5 +19,6 @@ urlpatterns = [
     re_path(r"^api/healthz/?$", health),
     path("api/", include("apps.core.accounts.urls")),
     path("api/", include("apps.core.catalog.urls")),
+    path("api/", include("apps.core.subscriptions.urls")),
     re_path(r"^(?!api/|admin/|static/).*$", spa),
 ]

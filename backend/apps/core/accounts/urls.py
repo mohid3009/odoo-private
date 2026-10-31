@@ -11,4 +11,5 @@ urlpatterns = [
     path("auth/password-reset/request/", views.PasswordResetRequestView.as_view()),
     path("auth/password-reset/confirm/", views.PasswordResetConfirmView.as_view()),
     path("staff/", views.StaffListCreateView.as_view()),
+    path("customers/", views.CustomerListView.as_view()),
 ]
