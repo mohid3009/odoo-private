@@ -3,6 +3,7 @@ import Billing from "./Billing";
 import InvoiceDetail from "./InvoiceDetail";
 import { InvoiceList } from "./Invoices";
 import InvoicePrint from "./InvoicePrint";
+import Notifications from "./Notifications";
 import Payments from "./Payments";
 import type { NavItem } from "../../components/nav";
 import RoleGuard from "../../components/RoleGuard";
@@ -19,6 +20,7 @@ export const opsNav: NavItem[] = [
   { to: "/payments", label: "Payments", roles: ["admin", "staff"] },
   { to: "/billing", label: "Billing", roles: ["admin", "staff"] },
   { to: "/catalog", label: "Catalog", roles: ["admin", "staff"] },
+  { to: "/notifications", label: "Notifications", roles: ["admin"] },
   { to: "/staff", label: "Staff", roles: ["admin"] },
 ];
 
@@ -45,5 +47,6 @@ export const opsRoutes = () => [
     <Route path="taxes" element={<TaxesPage />} />
     <Route path="terms" element={<TermsPage />} />
   </Route>,
+  <Route key="notifications" path="notifications" element={<RoleGuard allow={["admin"]}><Notifications /></RoleGuard>} />,
   <Route key="staff" path="staff" element={<RoleGuard allow={["admin"]}><Staff /></RoleGuard>} />,
 ];

@@ -5,6 +5,7 @@ import { api, ApiError } from "../../api/client";
 import ConfirmButton from "../../components/ConfirmButton";
 import MoneyText from "../../components/MoneyText";
 import StatusBadge from "../../components/StatusBadge";
+import NotificationTimeline from "./NotificationTimeline";
 import SubscriptionForm from "./SubscriptionForm";
 
 // Which button each server-offered action shows. The server decides what is offered (`actions`) and re-checks it on click.
@@ -146,6 +147,7 @@ export default function SubscriptionDetail() {
               ))}
             </ol>
           </section>
+          <NotificationTimeline objectType="subscription" objectId={sub.id} />
         </>
       )}
     </div>
