@@ -71,10 +71,14 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] Odoo payment mirroring: not implemented (KICKOFF §9 cut). `odoo_sync_status` stays `skipped`; nothing calls Odoo and `ODOO_ENABLED=false` works (also tested with Odoo enabled and failing)
 
 ## Phase 7 — Notifications (4:30–5:05)
-- [ ] `console` + `twilio` adapters; event catalog; `run_notifications`; `send_notifications` retry
-- [ ] API + React settings/admin pages
-- [ ] 8 mandatory tests from `docs/NOTIFICATIONS.md` §9
-- [ ] Acceptance: confirm invoice + record payment each deliver; reruns send no duplicates
+- [x] Adapters: `console` and `twilio` (stdlib HTTP, sandbox-aware status) in `integrations/whatsapp`; `meta` cut (D-043)
+- [x] Events wired: `WELCOME`, `QUOTATION_READY`, `SUBSCRIPTION_ACTIVATED` (plus `INVOICE_READY`, `PAYMENT_RECEIVED` from Phases 4/6); reminders `INVOICE_DUE_SOON`, `INVOICE_OVERDUE` (day 1/7), `SUBSCRIPTION_EXPIRING`
+- [x] Commands `run_notifications` (also called at the end of `run_billing`) and `send_notifications` (retry sweep, max 3 attempts, backoff 1/5/30 min)
+- [x] API: logs (+retry), events, test-send, run-reminders, provider-status, `/me/notifications/`, `/me/notification-settings/`
+- [x] React: admin Notifications page (log + retry, event toggles / templates, test send, run reminders, provider banner), "Send via email / WhatsApp" on invoice detail, notification timeline on invoice and subscription detail
+- [x] The 8 mandatory tests from `docs/NOTIFICATIONS.md` §9 plus Twilio request shape / error mapping, API permissions, wiring
+- [x] Acceptance, console provider: test send, reminders run and Events tab checked in the browser; confirm + payment rows `sent`; reruns of billing and reminders add no rows (tests)
+- [ ] Acceptance with `WHATSAPP_PROVIDER=twilio` on a joined phone: **not run** (no Twilio credentials here); the adapter is verified only against a mocked HTTP layer
 
 ## Phase 8 — Portal, dashboard, performance (5:05–5:35) [S1/S7]
 - [ ] Portal (my subscriptions / invoices, read-only)

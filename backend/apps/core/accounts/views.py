@@ -13,6 +13,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.finance.notifications.services import notify
+
 from .models import Role
 from .permissions import IsAdmin, IsStaffOrAdmin
 from .serializers import (
@@ -45,7 +47,7 @@ class SignupView(APIView):
         s = SignupSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         user = s.save()
-        # TODO(phase 4): notify(WELCOME) once the notifications service exists
+        notify("WELCOME", user, user, context={"customer_name": user.name or user.email})  # never raises, never blocks
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 

@@ -172,5 +172,10 @@ def run_billing(as_of=None, user=None, hooks=discount_hooks):
     run.log = "\n".join(problems)
     run.finished_at = timezone.now()
     run.save()
-    # TODO(phase 7): run_notifications() here, so reminders follow every billing run
+    try:  # reminders follow every run; they dedupe, and trouble there never fails billing
+        from apps.finance.notifications.reminders import run_reminders
+
+        run_reminders(as_of)
+    except Exception:
+        log.exception("run_reminders failed after billing run %s", run.pk)
     return run

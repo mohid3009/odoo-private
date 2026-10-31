@@ -118,8 +118,8 @@ Detail adds: `lines:[{id, kind: product|discount, description, quantity, unit_pr
 | `GET /invoices/{id}/print/` | any role (scoped) | Detail plus `seller:{name}` and `customer_details:{name,email,company_name,phone,address}` for the print view |
 Each action returns the invoice detail.
 
-### Notifications skeleton (internal, full API arrives in Phase 7)
-`notify(event_code, user, obj, …)` writes a `NotificationLog` row per channel (UNIQUE `dedupe_key`) and sends after commit; failures are logged on the row and never reach the caller. Phase 4 wires `INVOICE_READY`. Spec: `docs/NOTIFICATIONS.md`.
+### Notifications
+See **Phase 7 — Notifications** below. `notify(event_code, user, obj, …)` writes a `NotificationLog` row per channel (UNIQUE `dedupe_key`) and sends after commit; failures land on the row and never reach the caller. Spec: `docs/NOTIFICATIONS.md`.
 
 ### Commands
 `python manage.py run_billing [--as-of YYYY-MM-DD]` · `python manage.py sync_odoo` (retries `pending`/`error` Odoo mirrors).
@@ -179,8 +179,26 @@ List/detail gain `payment_needs_attention` and `failed_attempts` (staff/admin on
 ### Odoo
 Payment mirroring to Odoo is optional and **not implemented** (KICKOFF §9 cut): `odoo_sync_status` stays `skipped`, nothing in the payment flow calls Odoo, and everything works with `ODOO_ENABLED=false` (and with it `true`: a test proves no Odoo call is made).
 
-## Phase 7 — Notifications · Phase 8 — Portal/Dashboard (planned)
-`GET /notifications/logs/`, `POST /notifications/logs/{id}/retry/`, `GET|PATCH /notifications/events/`, `POST /notifications/test-send/`,
-`GET|PATCH /me/notification-settings/`, `POST /notifications/run-reminders/`.
+## Phase 7 — Notifications (D-043)
+Events wired: `WELCOME` (signup), `QUOTATION_READY` (→ quotation), `SUBSCRIPTION_ACTIVATED` (→ active), `INVOICE_READY` (confirm / send), `PAYMENT_RECEIVED` (completed payment) and the reminders `INVOICE_DUE_SOON`, `INVOICE_OVERDUE`, `SUBSCRIPTION_EXPIRING`. Password reset stays email-only and outside `notify()` (D-022).
+Log row: `{id, event, event_label, channel, provider, recipient_user, recipient_email, recipient_address, object_type, object_id, body, status, skip_reason, error, attempts, next_attempt_at, created_at, sent_at}`.
+
+| Method · path | Role | Notes |
+|---|---|---|
+| `GET /notifications/logs/` | admin · staff (only with both `object_type` and `object_id`, for the timeline on invoice / subscription detail; else 403) | Paginated, newest first. Filters: `event` (code), `channel`, `status`, `user`, `object_type`, `object_id`, `created_after`, `created_before` |
+| `POST /notifications/logs/{id}/retry/` | admin | `failed` rows only (else 409). Resets `attempts` to 0 and sends now; returns the row |
+| `GET /notifications/events/` | admin | One row per event in the catalog (created on first read): `{code, label, enabled_email, enabled_whatsapp, template_body}` |
+| `PATCH /notifications/events/{code}/` | admin | `enabled_email`, `enabled_whatsapp`, `template_body` (must be non-empty) |
+| `POST /notifications/test-send/` `{channel, to, body}` | admin | Sends directly, writes no log row. `to` is an email or a number (normalised to E.164). → `{ok, provider, detail}`; a provider failure is 200 `ok:false` with the reason |
+| `POST /notifications/run-reminders/` `{as_of?}` | admin | Runs the reminder scan → `{as_of, due_soon, overdue, expiring}` (counts of new messages; reruns give 0) |
+| `GET /notifications/provider-status/` | admin | `{provider, configured, sandbox}` for the banner |
+| `GET /me/notifications/` | any logged-in | Own timeline only: `{id, event_label, channel, status, body, created_at, sent_at}` |
+| `GET\|PATCH /me/notification-settings/` | customer (others 404) | `{email_notifications, whatsapp_number, whatsapp_opt_in}`; same validation as `PATCH /auth/me/` profile |
+| `POST /invoices/{id}/send/` | staff, admin | unchanged from Phase 4 (`channels` selects email and/or WhatsApp) |
+
+Skip reasons on a `skipped` row: `event_disabled`, `email_opt_out`, `no_opt_in`, `invalid_number`, `provider_disabled` (WhatsApp provider selected but not configured).
+Delivery: `sent` after the provider accepts; `failed` rows retry at +1 min, +5 min, +30 min (3 attempts) via `manage.py send_notifications`.
+
+## Phase 8 — Portal/Dashboard (planned)
 `GET /dashboard/summary/?from&to&customer&plan&status` → `{kpis, by_plan, by_month, overdue:{count,results}}`.
 Portal reuses `/subscriptions/` and `/invoices/` (scoped by role); no separate endpoints.

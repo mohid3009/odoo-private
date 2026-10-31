@@ -96,13 +96,38 @@ def test_provider_failure_is_recorded_not_raised(cust, obj, monkeypatch, django_
     assert e.status == "failed" and e.attempts == 1 and "smtp down" in e.error and e.next_attempt_at and e.sent_at is None
 
 
-def test_unimplemented_whatsapp_provider_fails_cleanly(obj, settings, django_capture_on_commit_callbacks):
-    settings.WHATSAPP_PROVIDER = "twilio"
+def test_twilio_without_credentials_is_skipped_as_provider_disabled(obj, settings, django_capture_on_commit_callbacks):
+    settings.WHATSAPP_PROVIDER, settings.TWILIO_ACCOUNT_SID = "twilio", ""
     u = mk_user("w@shop.com", "customer", whatsapp_number="+919876543210", whatsapp_opt_in=True)
     with django_capture_on_commit_callbacks(execute=True):
         notify("INVOICE_READY", u, obj, context=CTX)
     w = rows()["whatsapp"]
-    assert w.status == "failed" and "Phase 7" in w.error and rows()["email"].status == "sent"  # email unaffected
+    assert w.status == "skipped" and w.skip_reason == "provider_disabled" and rows()["email"].status == "sent"  # email unaffected
+
+
+def test_unknown_provider_fails_cleanly_on_the_row(obj, settings, django_capture_on_commit_callbacks):
+    settings.WHATSAPP_PROVIDER = "meta"  # not built (stretch): configured() is False -> skipped, never an exception
+    u = mk_user("w@shop.com", "customer", whatsapp_number="+919876543210", whatsapp_opt_in=True)
+    with django_capture_on_commit_callbacks(execute=True):
+        notify("INVOICE_READY", u, obj, context=CTX)
+    assert rows()["whatsapp"].skip_reason == "provider_disabled"
+
+
+@pytest.mark.parametrize("raw,sent_to", [("9876543210", "+919876543210"), ("+91 98765-43210", "+919876543210")])
+def test_numbers_are_normalised_to_e164(obj, raw, sent_to, django_capture_on_commit_callbacks):
+    u = mk_user("w@shop.com", "customer", whatsapp_number=raw, whatsapp_opt_in=True)  # stored raw, e.g. by an older client
+    with django_capture_on_commit_callbacks(execute=True):
+        notify("INVOICE_READY", u, obj, context=CTX)
+    w = rows()["whatsapp"]
+    assert w.recipient_address == sent_to and w.status == "sent"
+
+
+@pytest.mark.parametrize("raw", ["12345", "abc", "+0123456789"])
+def test_unusable_numbers_are_skipped_as_invalid(obj, raw):
+    u = mk_user("w@shop.com", "customer", whatsapp_number=raw, whatsapp_opt_in=True)
+    notify("INVOICE_READY", u, obj, context=CTX)
+    w = rows()["whatsapp"]
+    assert w.status == "skipped" and w.skip_reason == "invalid_number"
 
 
 def test_a_failed_row_can_be_retried_and_gives_up_after_three(cust, obj, monkeypatch, django_capture_on_commit_callbacks):

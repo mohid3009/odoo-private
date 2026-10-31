@@ -8,6 +8,7 @@ import Modal from "../../components/Modal";
 import MoneyText from "../../components/MoneyText";
 import ResourceForm from "../../components/ResourceForm";
 import StatusBadge from "../../components/StatusBadge";
+import NotificationTimeline from "./NotificationTimeline";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><dt className="text-xs text-slate-500">{label}</dt><dd>{children}</dd></div>;
@@ -124,11 +125,12 @@ export default function InvoiceDetail() {
   if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
   if (isError || !inv) return <p className="py-6 text-red-700">Invoice not found. <Link className="text-indigo-700" to="/invoices">Back to the list</Link></p>;
 
-  const act = async (action: "confirm" | "cancel" | "send", message = "") => {
+  const act = async (action: "confirm" | "cancel" | "send", message = "", body?: unknown) => {
     setError(""); setNote("");
     try {
-      const fresh = await api.post<any>(`/api/invoices/${id}/${action}/`);
+      const fresh = await api.post<any>(`/api/invoices/${id}/${action}/`, body);
       qc.setQueryData(["invoices", "detail", id], fresh);
+      qc.invalidateQueries({ queryKey: ["notifications", "timeline"] });
       qc.invalidateQueries({ queryKey: ["invoices", "list"] });
       if (message) setNote(message);
     } catch (e) {
@@ -146,7 +148,12 @@ export default function InvoiceDetail() {
         {inv.payment_needs_attention && <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white">Payment needs attention</span>}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {inv.actions.includes("confirm") && <button className="rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => act("confirm", "Confirmed. The customer has been notified.")}>Confirm</button>}
-          {inv.actions.includes("send") && <button className="rounded border px-3 py-1 text-sm" onClick={() => act("send", "Invoice sent to the customer.")}>Send</button>}
+          {inv.actions.includes("send") && (
+            <>
+              <button className="rounded border px-3 py-1 text-sm" onClick={() => act("send", "Email queued for the customer.", { channels: ["email"] })}>Send via email</button>
+              <button className="rounded border px-3 py-1 text-sm" onClick={() => act("send", "WhatsApp queued if the customer opted in — see the notifications list below.", { channels: ["whatsapp"] })}>Send via WhatsApp</button>
+            </>
+          )}
           <Link className="rounded border px-3 py-1 text-sm" to={`/invoices/${id}/print`}>Print</Link>
           {inv.actions.includes("cancel") && <ConfirmButton danger label="Cancel invoice" confirmText="Cancel this invoice?" onConfirm={() => act("cancel")} />}
         </div>
@@ -202,6 +209,7 @@ export default function InvoiceDetail() {
           qc.invalidateQueries({ queryKey: ["payments"] });
         }} />
       )}
+      {inv.status !== "draft" && <NotificationTimeline objectType="invoice" objectId={inv.id} />}
     </div>
   );
 }

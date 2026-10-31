@@ -19,7 +19,7 @@ Reminders: `manage.py run_notifications` (called at the end of `run_billing`, by
 |---|---|---|
 | `console` | default, tests, offline demo | writes the message to the log/stdout, marks `sent` |
 | `twilio` | judged demo | WhatsApp **sandbox**: each phone must send the join code first; reaches only joined numbers; free-form text only inside the 24 h session window |
-| `meta` | stretch | WhatsApp Cloud API; production needs a verified business + approved templates (`meta_template_name`) |
+| `meta` | **cut** (D-043) | WhatsApp Cloud API; production needs a verified business + approved templates (`meta_template_name`). Selecting it skips WhatsApp rows as `provider_disabled` |
 Selected by `WHATSAPP_PROVIDER`. The app is fully functional with `console`. Say in the pitch: production = verified business account + approved templates.
 
 ## 3. Eligibility rules
@@ -45,10 +45,10 @@ Selected by `WHATSAPP_PROVIDER`. The app is fully functional with `console`. Say
 | `PASSWORD_RESET` | reset request | user | email only | — |
 | `BILLING_RUN_SUMMARY` *(cut-line 1)* | end of run | admin | email | run id |
 
-## 6. API (Phase 7)
+## 6. API (Phase 7, built — exact contract in `docs/API.md`)
 | Method | Path | Role |
 |---|---|---|
-| GET | `/notifications/logs/` (filters: event, channel, status, user, date) | admin (customers: own via `/me/notifications/`) |
+| GET | `/notifications/logs/` (filters: event, channel, status, user, object_type, object_id, created_after/before) | admin; staff only when `object_type` + `object_id` are given (timeline); customers: own via `/me/notifications/` |
 | POST | `/notifications/logs/{id}/retry/` | admin |
 | GET/PATCH | `/notifications/events/` (enable per channel, template body) | admin |
 | POST | `/notifications/test-send/ {channel, to, body}` | admin |

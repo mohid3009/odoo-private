@@ -13,7 +13,7 @@ Frontend: no unit tests (rule 12) — manual checklist below, run in Phase 9.
 | 4 | **(1)** run twice → no new invoices · **(2)** concurrent runs → no duplicates · **(3)** catch-up creates each missed period · **(4)** nothing beyond expiry; auto-close only with flag · **(5)** paused/draft/closed skipped · **(6)** worked example = 8283.60 · **(7)** one failing sub doesn't stop the run · **(8)** Odoo down → local invoice `pending` |
 | 5 | percent/fixed · min qty / min purchase unmet · before start / after end · limit 2 with 3 eligible → exactly 2 · scope product vs subscription · race-safe counter · staff create 403 |
 | 6 | partial then full → Paid exactly at the sum · overpayment rejected · draft/cancelled rejected · overdue rule (D-013) · denormalized totals equal recomputation |
-| 7 | The 8 tests in `NOTIFICATIONS.md` §9 |
+| 7 | The 8 tests in `NOTIFICATIONS.md` §9 (`tests/test_notifications.py`, `tests/test_notifications_phase7.py`) · Twilio request shape and error mapping (HTTP mocked) · retry sweep · log / events / test-send / reminders permissions · timeline scope for staff |
 | 8 | Customer A → B's subscription/invoice/payment → 404 · dashboard numbers equal hand-computed fixture |
 
 ## Run the suite on PostgreSQL (required before a release; D-042)
