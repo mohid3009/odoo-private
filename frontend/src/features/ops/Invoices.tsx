@@ -10,6 +10,7 @@ const CHIPS: { key: string; label: string; params: Record<string, string> }[] = 
   { key: "confirmed", label: "Confirmed", params: { status: "confirmed" } },
   { key: "paid", label: "Paid", params: { status: "paid" } },
   { key: "overdue", label: "Overdue", params: { overdue: "true" } },
+  { key: "attention", label: "Needs attention", params: { needs_attention: "true" } },
   { key: "cancelled", label: "Cancelled", params: { status: "cancelled" } },
 ];
 
@@ -17,7 +18,15 @@ const columns: Column<any>[] = [
   { key: "number", header: "Invoice", render: (r) => <Link className="font-medium text-indigo-700" to={`/invoices/${r.id}`}>{r.number ?? `Draft #${r.id}`}</Link> },
   { key: "customer_email", header: "Customer" },
   { key: "subscription_number", header: "Subscription" },
-  { key: "status", header: "Status", render: (r) => <StatusBadge status={r.status} /> },
+  {
+    key: "status", header: "Status",
+    render: (r) => (
+      <span className="flex items-center gap-1">
+        <StatusBadge status={r.status} />
+        {r.payment_needs_attention && <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-medium text-white" title={`${r.failed_attempts} failed payment attempts`}>Needs attention</span>}
+      </span>
+    ),
+  },
   { key: "period", header: "Period", render: (r) => `${r.period_start} → ${r.period_end}` },
   {
     key: "due_date", header: "Due",
