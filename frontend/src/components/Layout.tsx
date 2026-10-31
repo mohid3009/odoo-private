@@ -6,6 +6,7 @@ import type { Role } from "../api/types";
 // Nav grows per phase; a role only sees what it may open.
 const NAV: { to: string; label: string; roles: Role[]; end?: boolean }[] = [
   { to: "/", label: "Home", roles: ["admin", "staff", "customer"], end: true },
+  { to: "/catalog", label: "Catalog", roles: ["admin", "staff"] },
   { to: "/staff", label: "Staff", roles: ["admin"] },
   { to: "/profile", label: "Profile", roles: ["admin", "staff", "customer"] },
 ];

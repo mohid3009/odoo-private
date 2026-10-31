@@ -9,7 +9,7 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `*` (temporary) | any | Landing (health status) | 0 |
 | `/login`, `/signup`, `/forgot-password`, `/reset-password/:uid/:token` | anon | Auth pages | 1 |
 | `/staff` | admin | Staff management | 1 |
-| `/catalog/products`, `/catalog/taxes`, `/catalog/terms`, `/catalog/plans` | staff+admin | Config-driven CRUD | 2 |
+| `/catalog` → `/catalog/products`, `/catalog/plans`, `/catalog/taxes`, `/catalog/terms` | staff (read-only) + admin | Config-driven CRUD via `CrudPage` + config in `pages/Catalog.tsx` | 2 |
 | `/templates`, `/subscriptions`, `/subscriptions/new`, `/subscriptions/:id` | staff+admin | Lists/forms/detail | 3 |
 | `/invoices`, `/invoices/:id`, `/invoices/:id/print`, `/billing` | staff+admin | Invoices, print view, Run billing | 4 |
 | `/discounts` | admin | Discounts | 5 |

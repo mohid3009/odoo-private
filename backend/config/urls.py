@@ -18,5 +18,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     re_path(r"^api/healthz/?$", health),
     path("api/", include("apps.accounts.urls")),
+    path("api/", include("apps.catalog.urls")),
     re_path(r"^(?!api/|admin/|static/).*$", spa),
 ]
