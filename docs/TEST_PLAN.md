@@ -14,7 +14,7 @@ Frontend: no unit tests (rule 12) — manual checklist below, run in Phase 9.
 | 5 | percent/fixed · min qty / min purchase unmet · before start / after end · limit 2 with 3 eligible → exactly 2 · scope product vs subscription · race-safe counter · staff create 403 |
 | 6 | partial then full → Paid exactly at the sum · overpayment rejected · draft/cancelled rejected · overdue rule (D-013) · denormalized totals equal recomputation |
 | 7 | The 8 tests in `NOTIFICATIONS.md` §9 (`tests/test_notifications.py`, `tests/test_notifications_phase7.py`) · Twilio request shape and error mapping (HTTP mocked) · retry sweep · log / events / test-send / reminders permissions · timeline scope for staff |
-| 8 | Customer A → B's subscription/invoice/payment → 404 · dashboard numbers equal hand-computed fixture |
+| 8 | `tests/test_portal_isolation.py`: customer A → B's subscription / invoice / print / invoice payments / payment → 404 (same as a missing id), lists and filters leak nothing, customer actions 403 before any lookup · `tests/test_dashboard.py`: KPIs, by-plan, by-month and overdue order equal a hand-computed fixture; customer / plan / status / date filters; failed, reversed, draft and cancelled rows never count; bad filters 400; customer and anonymous 403; query count independent of row count |
 
 ## Run the suite on PostgreSQL (required before a release; D-042)
 sqlite silently ignores `FOR UPDATE`, so it can neither verify concurrency nor catch Postgres-only errors (a nullable-join lock bug hid behind it from Phase 3 to Phase 6).
