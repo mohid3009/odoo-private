@@ -6,8 +6,12 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.utils import timezone
+
+from apps.core.accounts.validators import normalize_whatsapp
+from integrations import whatsapp
 
 from .models import NotificationEvent, NotificationLog
 
@@ -15,7 +19,7 @@ log = logging.getLogger(__name__)
 CHANNELS = ("email", "whatsapp")
 BACKOFF = [timedelta(minutes=1), timedelta(minutes=5), timedelta(minutes=30)]
 
-# code -> (label, default template). Only INVOICE_READY is wired in Phase 4; the rest are listed so Phase 7 just calls notify().
+# code -> (label, default template). The admin can edit the body per event (Notifications page).
 DEFAULT_EVENTS = {
     "WELCOME": ("Welcome to Brightloop", "Hi {customer_name}, welcome to Brightloop! Your account is ready."),
     "QUOTATION_READY": ("Your quotation is ready", "Hi {customer_name}, quotation {subscription_number} is ready for your review."),
@@ -53,8 +57,15 @@ def _plan_channels(user, event, wanted):
             reason = "event_disabled"
         elif not (profile and profile.whatsapp_opt_in):
             reason = "no_opt_in"
-        elif not number:
-            reason = "invalid_number"
+        else:
+            try:
+                number = normalize_whatsapp(number) or None
+            except ValidationError:
+                number = None
+            if not number:
+                reason, number = "invalid_number", profile.whatsapp_number
+            elif not whatsapp.configured():
+                reason = "provider_disabled"
         out.append(("whatsapp", number, reason))
     return out
 
@@ -90,13 +101,6 @@ def notify(code, user, obj, *, context=None, force=False, channels=None, variant
         return []
 
 
-def _send_whatsapp(address, body, row):
-    if settings.WHATSAPP_PROVIDER == "console":
-        log.info("[whatsapp:console] to %s: %s", address, body)
-        return f"console-{row.pk}"
-    raise NotImplementedError(f"WhatsApp provider '{settings.WHATSAPP_PROVIDER}' arrives in Phase 7; use WHATSAPP_PROVIDER=console")
-
-
 def dispatch(row_id):
     """Send one queued row. Updates the row; never raises."""
     try:
@@ -109,7 +113,7 @@ def dispatch(row_id):
                 send_mail(row.event.label, row.body, settings.DEFAULT_FROM_EMAIL, [row.recipient_address], fail_silently=False)
                 row.provider_message_id = ""
             else:
-                row.provider_message_id = _send_whatsapp(row.recipient_address, row.body, row)
+                row.provider_message_id = whatsapp.send(row.recipient_address, row.body, row.pk)
             row.status, row.sent_at, row.error, row.next_attempt_at = "sent", timezone.now(), "", None
         except Exception as e:
             row.status, row.error = "failed", f"{type(e).__name__}: {e}"[:500]
@@ -117,3 +121,16 @@ def dispatch(row_id):
         row.save()
     except Exception:
         log.exception("dispatch(%s) crashed", row_id)
+
+
+def send_pending(now=None):
+    """The retry sweep: queued rows that never got dispatched and failed rows whose backoff has passed."""
+    now = now or timezone.now()
+    ids = list(
+        NotificationLog.objects.filter(attempts__lt=3)
+        .filter(models.Q(status="queued", created_at__lte=now - BACKOFF[0]) | models.Q(status="failed", next_attempt_at__lte=now))
+        .values_list("pk", flat=True)
+    )
+    for pk in ids:
+        dispatch(pk)
+    return len(ids)
