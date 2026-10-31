@@ -3,6 +3,8 @@ from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.db.models.functions import Lower
 
+from .scoping import scoped_manager
+
 
 class Role(models.TextChoices):
     ADMIN = "admin"
@@ -44,3 +46,21 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class CustomerProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    company_name = models.CharField(max_length=150, blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    address = models.TextField(blank=True)
+    odoo_partner_id = models.PositiveIntegerField(null=True, blank=True)
+    odoo_sync_status = models.CharField(max_length=10, default="skipped")
+    whatsapp_number = models.CharField(max_length=20, blank=True)  # E.164, normalised by validators.normalize_whatsapp
+    whatsapp_opt_in = models.BooleanField(default=False)
+    whatsapp_opted_in_at = models.DateTimeField(null=True, blank=True)
+    email_notifications = models.BooleanField(default=True)
+
+    objects = scoped_manager("user")
+
+    def __str__(self):
+        return f"profile<{self.user.email}>"

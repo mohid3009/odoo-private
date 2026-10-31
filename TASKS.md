@@ -14,20 +14,22 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] First commit (repo is not yet a git repo)
 
 ## Phase 1 — Auth, roles, shell (0:30–1:15) [S1]
-- [ ] API: csrf, signup, login, logout, me, password-reset request/confirm, staff create/list
-- [ ] Password validator (≥ 9, upper, lower, special) on signup/reset/staff creation
-- [ ] `IsAdmin`, `IsStaffOrAdmin`, `IsCustomer`; `for_user()` base manager
-- [ ] React: Login, Signup (+ optional WhatsApp number & opt-in), Forgot/Reset, AuthProvider, RoleGuard, Layout, Staff page
-- [ ] Seed `admin@demo`, `staff@demo`, `customer@demo`
-- [ ] Tests: password table (incl. exactly 8 chars), duplicate email other case, reset token, staff-creation 403, role matrix
-- [ ] Acceptance: each role sees different nav; reset email in console
+- [x] API: csrf, signup, login, logout, me (GET/PATCH), password-reset request/confirm, staff create/list
+- [x] Password validator (≥ 9, upper, lower, special) on signup/reset/staff creation
+- [x] `IsAdmin`, `IsStaffOrAdmin`, `IsCustomer`; `for_user()` scoped manager (`apps/accounts/scoping.py`)
+- [x] React: Login, Signup (+ optional WhatsApp number & opt-in), Forgot/Reset, Profile, AuthProvider, RoleGuard, Layout, Staff page
+- [x] Shared kit: DataTable, ResourceForm, StatusBadge, MoneyText, ConfirmButton, RoleGuard, Layout
+- [x] Seed `admin@demo`, `staff@demo`, `customer@demo` (`python scripts/seed_demo.py`, pw `Demo@12345`)
+- [x] Tests (33 passing): password table incl. exactly 8 chars, duplicate email other case, reset token (valid/garbage/reused), CSRF enforced, staff-creation 403 for staff/customer/anon, role matrix, `for_user` scoping
+- [x] Acceptance, checked in the browser against the built SPA: admin/staff/customer log in and see different nav (Staff link only for admin; Home label per role); staff and customer opening `/staff` land on the 403 page; weak/duplicate signup rejected; admin created `ops@demo.com`; reset link printed in server console, worked once, second use rejected
 
 ## Phase 2 — Catalog and plans (1:15–1:55) [S2]
-- [ ] Product (+variants), Tax, PaymentTerm, Plan ViewSets; writes admin-only
-- [ ] Config-driven CRUD pages
-- [ ] Odoo mirror for Tax/Product (failure never blocks saves)
-- [ ] Tests: variant +560, plan date validation, permissions, Odoo mocked success/failure → `pending`
-- [ ] Acceptance: admin creates product with Brand variant + monthly plan
+- [x] Product (+nested variants), Tax, PaymentTerm, Plan ViewSets; writes admin-only, reads staff+admin (`ReadOnlyOrAdmin`)
+- [x] Config-driven CRUD pages: one `CrudPage` + a config object per screen (`pages/Catalog.tsx`); `ResourceForm` gained `lines`, `multiselect`, `money`, options-from-endpoint
+- [x] Odoo mirror for Tax/Product after commit (`integrations/odoo/{mappers,sync}.py`); `skipped|pending|synced|error`, `sync_pending()` retry; failure never blocks a save
+- [x] Tests (37 new, 70 total passing): variant +560 → 1560.00, plan price + variant, date/min-qty/period/price validation, duplicate variants, variant replace-by-id, single default payment term, 409 on deleting an in-use product, permission matrix on all 4 endpoints, pagination/filter/search, query-count guards, Odoo mocked success / down→`pending` / rejected→`error` / disabled→`skipped` / retry
+- [x] Acceptance, in the browser: admin created GST 18%, product "Brightloop CRM" (tax + Brand=Odoo +560.00 → `effective_unit_price` 1560.00) and a monthly plan; an invalid date range showed the server error; staff see the catalog read-only (PATCH → 403); customer gets 403 page / API 403
+- [ ] Odoo mirror against a real instance (needs Docker, see Cut) — mappers are unverified
 
 ## Phase 3 — Templates and subscriptions (1:55–2:45) [S3]
 - [ ] QuotationTemplate (+lines); Subscription (+lines); `transition()` service + StatusLog; from-template
@@ -78,4 +80,6 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - **Odoo local bring-up (Phase 0)** — Docker Desktop's engine did not come up on the dev laptop (error dialog on startup; needs someone to look at its window). Running with `ODOO_ENABLED=false`. Files ready: `docker-compose.yml`, `odoo/config/odoo.conf`, `Makefile odoo-init`, `backend/scripts/odoo_smoke.py`. Retry on a Docker-capable machine / in Phase 4.
 
 ## Bugs
-- _none yet_
+- Fixed in Phase 1: `AuthProvider` used `queryClient.clear()` on login, which detached the `["me"]` query and bounced users back to `/login`. Now drops every cache key except `me`.
+- Phase 1 notes: staff and customer navs differ only by the Home label until later-phase pages exist; password-reset email still sent directly, moves behind `notify()` in Phase 4; `WELCOME` notification not wired yet (Phase 7).
+- Phase 1 UI checks were done by driving the built SPA in the in-app browser; the pane could not draw screenshots, so clicks went through page JS rather than pixel clicks.
