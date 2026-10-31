@@ -23,5 +23,6 @@ urlpatterns = [
     path("api/", include("apps.core.billing.urls")),
     path("api/", include("apps.finance.discounts.urls")),
     path("api/", include("apps.finance.payments.urls")),
+    path("api/", include("apps.finance.notifications.urls")),
     re_path(r"^(?!api/|admin/|static/).*$", spa),
 ]

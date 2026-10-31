@@ -14,7 +14,7 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `/invoices`, `/invoices/:id`, `/invoices/:id/print`, `/billing` | staff+admin | Invoices, print view, Run billing | 4 |
 | `/discounts`, `/discounts/:id/redemptions` | admin writes, staff read-only | Discounts (`CrudPage` config) + redemptions audit; the attach control lives on `/subscriptions/:id` | 5 |
 | `/payments` | staff+admin | Payments list | 6 |
-| `/notifications` | admin | Log, retry, toggles, test-send | 7 |
+| `/notifications` | admin | Message log, events and templates, test send, run reminders | 7 |
 | `/dashboard` | staff+admin | KPIs, summaries, overdue | 8 |
 | `/portal`, `/portal/subscriptions`, `/portal/invoices/:id`, `/portal/settings` | customer | Self-service (read-only) | 8 |
 | `/403`, `*` | any | Forbidden / Not found | 9 |
