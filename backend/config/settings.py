@@ -31,14 +31,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "django_filters",
-    "apps.accounts",
-    "apps.catalog",
-    "apps.subscriptions",
-    "apps.billing",
-    "apps.discounts",
-    "apps.payments",
-    "apps.notifications",
-    "apps.dashboard",
+    "apps.core.accounts",
+    "apps.core.catalog",
+    "apps.core.subscriptions",
+    "apps.core.billing",
+    "apps.finance.discounts",
+    "apps.finance.payments",
+    "apps.finance.notifications",
+    "apps.finance.dashboard",
 ]
 
 MIDDLEWARE = [
@@ -78,6 +78,8 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = "accounts.User"
+AUTH_PASSWORD_VALIDATORS = [{"NAME": "apps.core.accounts.validators.PasswordRuleValidator"}]  # D-006
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # reset links live 24 h; single-use because the hash changes
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
@@ -104,8 +106,7 @@ if not DEBUG:
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 25,
+    "DEFAULT_PAGINATION_CLASS": "config.pagination.StandardPagination",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
@@ -115,7 +116,7 @@ REST_FRAMEWORK = {
 }
 
 # --- email (D-007) ---
-EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND") or "apps.finance.notifications.email_backend.ConsoleEmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")

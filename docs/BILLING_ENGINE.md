@@ -63,3 +63,14 @@ cursor ends at 2026-05-01. Second run the same day → 0 created. Expiry 2026-03
 
 ## Odoo
 After commit only; never inside the billing transaction. Confirm (separate action) posts it. Details: `ODOO_INTEGRATION.md`.
+
+## As built (Phase 4) — where the code differs from the sketch above
+Code: `backend/apps/core/billing/engine.py` (`price_lines` pure math, `build_invoice`, `bill_subscription`, `run_billing`), `services.py` (confirm / cancel / send), `discount_hooks.py`. Decisions: D-037.
+- **Which subscriptions:** `status = active` and (`next_invoice_date <= as_of` **or** `expiry_date < as_of`), ordered by cursor, so `auto_close` also fires when nothing is left to bill. Each subscription runs in its own `try/except`; a run keeps counters in a `BillingRun` row (`created / skipped / errors`, plus a `log` of failures).
+- **Dates:** `invoice_date = as_of` (the run date), `due_date = invoice_date + payment_term.days`, `period_start/end` = the service period. Monthly/yearly arithmetic is anchored on the subscription's start day: 31 Jan → 28 Feb → 31 Mar.
+- **Expiry:** a period that *starts* on or before `expiry_date` is billed in full; once the cursor is past expiry nothing more is billed, and the subscription closes if `plan.auto_close` and the expiry date has passed.
+- **Failure isolation:** every catch-up period is its own transaction, so a failure on period 3 keeps periods 1–2 and the cursor stays where it stopped; the next run continues from there. A subscription with no lines raises and shows up in the run's `log`.
+- **Cursor repair:** if an invoice for `(subscription, period_start)` already exists (a crash, or a cancelled invoice), the cursor is advanced and the period counted as `skipped`; cancelled periods are never re-billed (D-019).
+- **Tax:** `tax_rate` of a line is the sum of its taxes; tax is computed per line on the post-discount amount, rounded half-up; invoice totals are sums of rounded line values. Worked example (tested): 5 × 1560.00 = 7800.00, discount −780.00, tax 1263.60, **total 8283.60** (9204.00 without the discount).
+- **Discounts (Phase 5):** `build_invoice` calls `discount_hooks.pick_discounts → reserve → record` inside the billing transaction. They are no-ops now; the tests drive the engine with a stub implementing the same contract. `reserve` must be the race-safe `UPDATE … WHERE used_count < usage_limit`.
+- **Mandatory tests** (`tests/test_billing_engine.py`): 1 run twice → nothing new · 2 interrupted/concurrent runs (cursor repair + UNIQUE constraint on sqlite; the threaded version runs on Postgres) · 3 catch-up (4 months; cap of 12 per run) · 4 expiry and `auto_close` only with the flag · 5 draft / quotation / confirmed-future / paused / closed skipped · 6 worked example · 7 one failing subscription (and a failure in a later period) · 8 Odoo down → local invoice `pending`.
