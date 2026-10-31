@@ -3,6 +3,7 @@ import Billing from "./Billing";
 import InvoiceDetail from "./InvoiceDetail";
 import { InvoiceList } from "./Invoices";
 import InvoicePrint from "./InvoicePrint";
+import Payments from "./Payments";
 import type { NavItem } from "../../components/nav";
 import RoleGuard from "../../components/RoleGuard";
 import { CatalogShell, PlansPage, ProductsPage, TaxesPage, TermsPage } from "./Catalog";
@@ -15,6 +16,7 @@ import { TemplatesPage } from "./Templates";
 export const opsNav: NavItem[] = [
   { to: "/subscriptions", label: "Subscriptions", roles: ["admin", "staff"] },
   { to: "/invoices", label: "Invoices", roles: ["admin", "staff"] },
+  { to: "/payments", label: "Payments", roles: ["admin", "staff"] },
   { to: "/billing", label: "Billing", roles: ["admin", "staff"] },
   { to: "/catalog", label: "Catalog", roles: ["admin", "staff"] },
   { to: "/staff", label: "Staff", roles: ["admin"] },
@@ -34,6 +36,7 @@ export const opsRoutes = () => [
   </Route>,
   // print is open to every role: the API only returns the caller's own invoices (customers never see drafts)
   <Route key="invoice-print" path="invoices/:id/print" element={<RoleGuard allow={["admin", "staff", "customer"]}><InvoicePrint /></RoleGuard>} />,
+  <Route key="payments" path="payments" element={<RoleGuard allow={["admin", "staff"]}><Payments /></RoleGuard>} />,
   <Route key="billing" path="billing" element={<RoleGuard allow={["admin", "staff"]}><Billing /></RoleGuard>} />,
   <Route key="catalog" path="catalog" element={<RoleGuard allow={["admin", "staff"]}><CatalogShell /></RoleGuard>}>
     <Route index element={<Navigate to="products" replace />} />
