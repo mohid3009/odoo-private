@@ -52,9 +52,47 @@ Product `variants` is a full replacement list on write: items with `id` are upda
 Errors: 400 `{variants:["Duplicate variant: Brand = Odoo."]}`, 400 `{available_to:["Available-to date must be on or after available-from."]}`, 400 `{min_quantity:["Ensure this value is greater than or equal to 1."]}`.
 Plan price semantics (D-001): the first subscription line costs `plan.price + variant.extra_price`; add-ons cost `product.sales_price + variant.extra_price`.
 
-## Phase 3 — Subscriptions (planned)
-`/quotation-templates/`, `/subscriptions/` (filters `status, customer, plan, search=number`),
-`POST /subscriptions/{id}/transition/ {to}` → subscription · 409 if illegal, `POST /subscriptions/from-template/ {template, customer, start_date}` → prefilled draft.
+## Phase 3 — Quotation templates & subscriptions (implemented)
+Status machine in `docs/STATE_MACHINES.md`. Every change of `status` goes through `services.transition()`; it is never writable via PATCH.
+
+### `GET /customers/` · staff, admin
+Picker list of customer users: paginated `{id, email, name}`, `?search=` on email/name.
+
+### Quotation templates `/quotation-templates/` · staff + admin (read and write); customers 403
+`GET list|detail`, `POST`, `PATCH|PUT /{id}/`, `DELETE /{id}/`. Filters `plan, is_active`, `?search=` on name.
+Body/JSON: `{id, name, plan, plan_name, validity_days (≥1, default 30), is_active, lines:[{id?, product, product_name, variant|null, quantity (≥1)}]}`.
+`lines` is a full replacement list on write (same rule as product variants). A variant must belong to its line's product (400).
+
+### Subscriptions `/subscriptions/` · read: any role (customers see **only their own**, other ids → 404); write: staff + admin
+`GET` list (light rows, no lines) and detail; `POST` create; `PATCH|PUT /{id}/` **only while `status = draft`** (else 409 `code: not_editable`). No DELETE (close it instead).
+Filters `status, customer, plan`; `?search=` matches `number` (and customer email); `?ordering=` on `number, start_date, created_at, next_invoice_date`.
+
+Fields: `id, number (SUB-000001, ro), customer (user id, role must be customer), customer_email (ro), plan, plan_name (ro), template (ro), status (ro), start_date, expiry_date|null, payment_term (default term if omitted), payment_term_name (ro), next_invoice_date (ro), quotation_valid_until (ro), notes, created_by (ro), created_at (ro), lines_total (ro, pre-tax), actions (ro)`.
+Detail adds `lines` and `status_log:[{from_status, to_status, by_user_email, at}]`.
+`actions` = what the **current user** may attempt now, e.g. `["quotation","closed"]`; targets are statuses, plus `"renew"` as an action. It reflects role and plan flags only — guards (quantity, dates) are still checked by the server when the button is used.
+
+Line: `{id?, product, product_name, variant|null, variant_label, description, quantity (≥1), unit_price, amount (ro), taxes:[tax ids]}`.
+`unit_price` omitted → server computes it (D-001): the line for the plan's primary product costs `plan.price + variant.extra_price`, any other product `product.sales_price + variant.extra_price`. `taxes` omitted → the product's taxes. `amount = quantity × unit_price`, 2 dp. `lines` is a full replacement list on write.
+If `lines` is omitted on **create**, one first line is added for the plan's primary product with `quantity = plan.min_quantity`.
+
+Create/update validation (400): customer must be a customer · plan must be active and available on `start_date` · `expiry_date ≥ start_date` · variant belongs to product · the primary-product line quantity ≥ `plan.min_quantity` (`lines` error).
+
+### `POST /subscriptions/{id}/transition/` `{ "to": "<status>" }` · staff, admin → subscription detail
+| to | From | Guards (409 `code: guard_failed` when not met) |
+|---|---|---|
+| `quotation` | draft | ≥ 1 line; primary-line qty ≥ plan minimum; plan available on `start_date`. Sets `quotation_valid_until = today + template.validity_days` (30 if no template) |
+| `draft` | quotation | — (clears `quotation_valid_until`) |
+| `confirmed` | quotation | `quotation_valid_until` not in the past. Sets `next_invoice_date = start_date` |
+| `active` | confirmed, paused | confirmed: `start_date ≤ today`. paused: `next_invoice_date = max(existing, today)` (no back-billing, D-014) |
+| `paused` | active | `plan.allow_pause` |
+| `closed` | draft, quotation, confirmed; active, paused | pre-active: always. active/paused: `plan.allow_early_close`, or the caller is admin (override) |
+Anything else → 409 `{"detail": "...", "code": "illegal_transition"}`. Every success writes a `status_log` row.
+
+### `POST /subscriptions/{id}/renew/` · staff, admin → subscription detail
+Only `active` with an `expiry_date`, and `plan.allow_renew` (409 `code: guard_failed` otherwise). Extends `expiry_date` by (expiry − start) (D-014).
+
+### `POST /subscriptions/from-template/` `{ template, customer, start_date, expiry_date?, payment_term?, notes? }` · staff, admin → 201 subscription detail (draft)
+Plan = the template's plan; lines copied from the template with prices computed as above; `template` is recorded and `quotation_valid_until = today + validity_days` is pre-set (FR-SUB-01; it is recomputed when moved to `quotation`). Inactive template → 400.
 
 ## Phase 4 — Billing (planned)
 `POST /billing/run/ {as_of?}` → `{run_id, created, skipped, errors}` · `GET /billing/runs/` ·

@@ -14,9 +14,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Role
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsStaffOrAdmin
 from .serializers import (
-    LoginSerializer, MeNameSerializer, ProfileSerializer, ResetConfirmSerializer,
+    CustomerPickSerializer, LoginSerializer, MeNameSerializer, ProfileSerializer, ResetConfirmSerializer,
     ResetRequestSerializer, SignupSerializer, StaffSerializer, UserSerializer,
 )
 
@@ -139,6 +139,17 @@ class PasswordResetConfirmView(APIView):
         user.set_password(v["new_password"])  # changes the hash, so the token is now spent
         user.save(update_fields=["password"])
         return Response({"detail": "Password updated. You can log in now."})
+
+
+class CustomerListView(generics.ListAPIView):
+    """Picker for forms (subscription customer): staff and admin only."""
+
+    permission_classes = [IsStaffOrAdmin]
+    serializer_class = CustomerPickSerializer
+    search_fields = ["email", "name"]
+
+    def get_queryset(self):
+        return User.objects.filter(role=Role.CUSTOMER).order_by("email")
 
 
 class StaffListCreateView(generics.ListCreateAPIView):

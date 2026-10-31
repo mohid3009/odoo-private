@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../api/client";
+import type { Role } from "../api/types";
 import { useAuth } from "../auth/AuthProvider";
 import ConfirmButton from "./ConfirmButton";
 import DataTable, { Column } from "./DataTable";
@@ -16,13 +17,14 @@ export interface CrudConfig<T> {
   defaults: Record<string, any>;
   toForm?: (row: T) => Record<string, any>; // API row -> form values
   toPayload?: (values: Record<string, any>) => Record<string, any>; // form values -> API body
+  writeRoles?: Role[]; // who sees create/edit/delete; default admin only (the server enforces it either way)
 }
 
 // One config object = one catalog screen (rule 10). Staff see the list read-only; the server refuses their writes anyway.
 export default function CrudPage<T extends { id: number }>({ config }: { config: CrudConfig<T> }) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const canWrite = user?.role === "admin";
+  const canWrite = !!user && (config.writeRoles ?? ["admin"]).includes(user.role);
   const [mode, setMode] = useState<{ row: T | null } | null>(null); // null = closed, row null = create
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
@@ -55,7 +57,7 @@ export default function CrudPage<T extends { id: number }>({ config }: { config:
         <input className="ml-auto rounded border px-3 py-1 text-sm" placeholder="Search…" aria-label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
         {canWrite && <button className="rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => { setError(""); setMode({ row: null }); }}>New {config.noun}</button>}
       </div>
-      {!canWrite && <p className="text-sm text-slate-500">Read-only: only an admin can change the catalog.</p>}
+      {!canWrite && <p className="text-sm text-slate-500">Read-only for your role.</p>}
       {error && <p role="alert" className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {canWrite && mode && (

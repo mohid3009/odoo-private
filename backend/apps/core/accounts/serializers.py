@@ -130,6 +130,12 @@ class StaffSerializer(serializers.ModelSerializer):
         return User.objects.create_user(v["email"], v["password"], name=v.get("name", ""), role=v["role"])
 
 
+class CustomerPickSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "email", "name"]
+
+
 class ResetRequestSerializer(serializers.Serializer):
     email = serializers.CharField()
 

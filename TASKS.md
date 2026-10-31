@@ -32,10 +32,11 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] Odoo mirror against a real instance (needs Docker, see Cut) — mappers are unverified
 
 ## Phase 3 — Templates and subscriptions (1:55–2:45) [S3]
-- [ ] QuotationTemplate (+lines); Subscription (+lines); `transition()` service + StatusLog; from-template
-- [ ] React list/filters, form with live line totals, detail with timeline
-- [ ] Tests: legal/illegal transitions, min quantity, concurrent numbering, template prefill
-- [ ] Acceptance: staff walks Draft → Quotation → Confirmed → Active
+- [x] QuotationTemplate (+lines); Subscription (+lines); `services.transition()` + StatusLog; `from-template`; `renew`; `activate_due()` (for billing); `/customers/` picker; auto-numbering `SUB-000001` (Counter row lock)
+- [x] React (`features/ops`): subscription list with status/plan/search filters, new (from template or scratch with live line totals), detail with server-driven action buttons + status history, Templates screen (`CrudPage`, staff may write)
+- [x] Tests (58 new, 128 total passing, 1 skipped): every illegal transition → 409, all guards (no lines, min qty, plan window, expired quotation, start date, plan flags, admin override), pause/resume without back-billing, renew, template prefill, draft-only editing, role matrix, customer sees only own rows (other id → 404), list N+1 guard
+- [x] Acceptance, in the browser as staff: template "CRM Starter" → subscription from template (5 × ₹1,560.00 = ₹7,800.00) → Send quotation → Confirm → Activate (history logged, next invoice 2026-10-31); Pause/Resume/Renew work; from-scratch form shows live totals and rejects qty below the plan minimum; customer is refused on every staff screen/endpoint
+- [ ] Concurrent numbering test is written but **skipped on sqlite** — run `pytest tests/test_subscriptions.py` against Postgres (needs Docker, see Cut)
 
 ## Phase 4 — Billing engine and invoices (2:45–3:50) [S4]
 - [ ] `apps/billing/engine.py`, `run_billing`, `POST /billing/run/`, BillingRun list
@@ -80,6 +81,7 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - **Odoo local bring-up (Phase 0)** — Docker Desktop's engine did not come up on the dev laptop (error dialog on startup; needs someone to look at its window). Running with `ODOO_ENABLED=false`. Files ready: `docker-compose.yml`, `odoo/config/odoo.conf`, `Makefile odoo-init`, `backend/scripts/odoo_smoke.py`. Retry on a Docker-capable machine / in Phase 4.
 
 ## Bugs
+- Fixed in Phase 3 (found by driving the UI): after a server error on a `lines` field (e.g. the plan's minimum quantity), react-hook-form kept the manually-set error and silently blocked every resubmit. `ResourceForm` and `SubscriptionForm` now `clearErrors()` before each submit. Same pass: `CrudPage` hardcoded admin-only writes, so staff could not manage templates; it now takes `writeRoles`.
 - Fixed in Phase 1: `AuthProvider` used `queryClient.clear()` on login, which detached the `["me"]` query and bounced users back to `/login`. Now drops every cache key except `me`.
 - Phase 1 notes: staff and customer navs differ only by the Home label until later-phase pages exist; password-reset email still sent directly, moves behind `notify()` in Phase 4; `WELCOME` notification not wired yet (Phase 7).
 - Phase 1 UI checks were done by driving the built SPA in the in-app browser; the pane could not draw screenshots, so clicks went through page JS rather than pixel clicks.
