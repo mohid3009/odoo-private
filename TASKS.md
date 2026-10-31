@@ -24,11 +24,12 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [x] Acceptance, checked in the browser against the built SPA: admin/staff/customer log in and see different nav (Staff link only for admin; Home label per role); staff and customer opening `/staff` land on the 403 page; weak/duplicate signup rejected; admin created `ops@demo.com`; reset link printed in server console, worked once, second use rejected
 
 ## Phase 2 — Catalog and plans (1:15–1:55) [S2]
-- [ ] Product (+variants), Tax, PaymentTerm, Plan ViewSets; writes admin-only
-- [ ] Config-driven CRUD pages
-- [ ] Odoo mirror for Tax/Product (failure never blocks saves)
-- [ ] Tests: variant +560, plan date validation, permissions, Odoo mocked success/failure → `pending`
-- [ ] Acceptance: admin creates product with Brand variant + monthly plan
+- [x] Product (+nested variants), Tax, PaymentTerm, Plan ViewSets; writes admin-only, reads staff+admin (`ReadOnlyOrAdmin`)
+- [x] Config-driven CRUD pages: one `CrudPage` + a config object per screen (`pages/Catalog.tsx`); `ResourceForm` gained `lines`, `multiselect`, `money`, options-from-endpoint
+- [x] Odoo mirror for Tax/Product after commit (`integrations/odoo/{mappers,sync}.py`); `skipped|pending|synced|error`, `sync_pending()` retry; failure never blocks a save
+- [x] Tests (37 new, 70 total passing): variant +560 → 1560.00, plan price + variant, date/min-qty/period/price validation, duplicate variants, variant replace-by-id, single default payment term, 409 on deleting an in-use product, permission matrix on all 4 endpoints, pagination/filter/search, query-count guards, Odoo mocked success / down→`pending` / rejected→`error` / disabled→`skipped` / retry
+- [x] Acceptance, in the browser: admin created GST 18%, product "Brightloop CRM" (tax + Brand=Odoo +560.00 → `effective_unit_price` 1560.00) and a monthly plan; an invalid date range showed the server error; staff see the catalog read-only (PATCH → 403); customer gets 403 page / API 403
+- [ ] Odoo mirror against a real instance (needs Docker, see Cut) — mappers are unverified
 
 ## Phase 3 — Templates and subscriptions (1:55–2:45) [S3]
 - [ ] QuotationTemplate (+lines); Subscription (+lines); `transition()` service + StatusLog; from-template
