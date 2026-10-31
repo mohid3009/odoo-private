@@ -124,8 +124,28 @@ Each action returns the invoice detail.
 ### Commands
 `python manage.py run_billing [--as-of YYYY-MM-DD]` · `python manage.py sync_odoo` (retries `pending`/`error` Odoo mirrors).
 
-## Phase 5 — Discounts · Phase 6 — Payments (planned)
-`/discounts/` (admin write), `POST|DELETE /subscriptions/{id}/discount/`, `GET /discounts/{id}/redemptions/`.
+## Phase 5 — Discounts (implemented)
+Rules and engine behaviour: `docs/BILLING_ENGINE.md` (as built, Phase 5) and D-040.
+
+### Discounts `/discounts/` · read: staff + admin · write: **admin only** · customers 403
+`GET` list (paginated; filters `scope, type, is_active`; `?search=` name/code; `?ordering=` `name, id, end_date, used_count`) and detail; `POST`; `PATCH|PUT /{id}/`; `DELETE /{id}/` (409 if it was ever redeemed: deactivate it instead).
+Fields: `id, name, code|null (unique when set), type (fixed|percent), value, scope (product|subscription), products:[product ids], min_purchase_amount|null, min_quantity|null, start_date|null, end_date|null, usage_limit|null, is_active, used_count (ro), state (ro), created_by (ro), created_at (ro)`.
+`state` ∈ `inactive | scheduled | active | expired | exhausted` (computed from today's date and the usage count).
+Validation (400): percent `0 < value ≤ 100` · fixed `value > 0` · `start_date ≤ end_date` · `usage_limit ≥ 1` · `min_quantity ≥ 1` · `min_purchase_amount ≥ 0` · scope `product` needs ≥ 1 product · scope `subscription` must have no products.
+
+### `GET /discounts/{id}/redemptions/` · staff, admin
+Paginated, newest first: `{ id, invoice, invoice_number, subscription_number, customer_email, amount, created_at }` — one row per invoice the rule was applied to.
+
+### `POST /subscriptions/{id}/discount/` `{ "discount": <id> }` · staff + admin → subscription detail
+Attaches a **subscription-scope** rule (replacing any attached one). 400 if the rule is product-scope or inactive; 409 `guard_failed` if the subscription is closed. It applies from the next invoice. `DELETE /subscriptions/{id}/discount/` detaches (→ subscription detail; 409 if closed). Subscription JSON gains `discount` (id|null) and `discount_name`.
+
+### How a rule reaches an invoice (no endpoint; the billing run does it)
+- The billing date (`as_of`) must fall inside `start_date…end_date`, the rule must be active and `used_count < usage_limit`.
+- **product** rules apply by themselves to every line whose product is listed, when that line meets `min_quantity` and `min_purchase_amount` (the line's amount). At most one rule per line: the largest saving wins. **subscription** rules apply only when attached, on the subtotal after line discounts, with `min_quantity` = total quantity and `min_purchase_amount` = that subtotal; at most one per invoice.
+- percent = `value%` of the base; fixed = `value`, capped at the base. A rule is counted **once per invoice** (`used_count + 1`, one `DiscountRedemption`), even if it discounts several lines.
+- The discount shows on the invoice as its own negative line (`kind: "discount"`); `discount_total` is the positive amount saved.
+
+## Phase 6 — Payments (planned)
 `POST /invoices/{id}/payments/ {amount, method, payment_date, note?}` → payment (400 overpay / bad invoice state), `GET /payments/` (filters `invoice, method, date range`).
 
 ## Phase 7 — Notifications · Phase 8 — Portal/Dashboard (planned)
