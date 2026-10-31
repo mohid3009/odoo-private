@@ -16,6 +16,40 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div><dt className="text-xs text-slate-500">{label}</dt><dd>{children}</dd></div>;
 }
 
+// Attach/detach a subscription-scope discount. Product discounts apply by themselves and are not listed here.
+function DiscountControl({ sub, onChange, onError }: { sub: any; onChange: (fresh: any) => void; onError: (m: string) => void }) {
+  const [choice, setChoice] = useState("");
+  const rules = useQuery({
+    queryKey: ["options", "/api/discounts/?scope=subscription"],
+    queryFn: () => api.get<any>("/api/discounts/?scope=subscription&is_active=true&page_size=200"),
+  });
+  const call = async (run: () => Promise<any>) => {
+    onError("");
+    try { onChange(await run()); setChoice(""); }
+    catch (e) { onError(e instanceof ApiError && ((e.body as any)?.detail || (e.body as any)?.discount) ? String((e.body as any).detail ?? (e.body as any).discount) : "Could not change the discount."); }
+  };
+  return (
+    <section className="flex flex-wrap items-center gap-3 rounded border bg-white p-4 text-sm" aria-label="Discount">
+      <span className="font-medium">Discount</span>
+      {sub.discount ? (
+        <>
+          <span className="rounded bg-green-100 px-2 py-0.5 text-green-800">{sub.discount_name}</span>
+          <button className="rounded border px-3 py-1" onClick={() => call(() => api.del(`/api/subscriptions/${sub.id}/discount/`))}>Detach</button>
+          <span className="text-xs text-slate-500">Applies from the next invoice.</span>
+        </>
+      ) : (
+        <span className="text-slate-500">none attached</span>
+      )}
+      <select aria-label="Choose a discount" className="rounded border px-2 py-1" value={choice} onChange={(e) => setChoice(e.target.value)}>
+        <option value="">{sub.discount ? "Replace with…" : "Attach a discount…"}</option>
+        {rules.data?.results.map((d: any) => <option key={d.id} value={d.id}>{d.name} ({d.type === "percent" ? `${Number(d.value)}%` : `₹${d.value}`})</option>)}
+      </select>
+      <button className="rounded bg-indigo-600 px-3 py-1 text-white disabled:opacity-50" disabled={!choice}
+        onClick={() => call(() => api.post(`/api/subscriptions/${sub.id}/discount/`, { discount: Number(choice) }))}>Attach</button>
+    </section>
+  );
+}
+
 export default function SubscriptionDetail() {
   const { id } = useParams();
   const qc = useQueryClient();
@@ -72,6 +106,8 @@ export default function SubscriptionDetail() {
             <Field label="Quotation valid until">{sub.quotation_valid_until ?? "—"}</Field>
             <Field label="Notes">{sub.notes || "—"}</Field>
           </dl>
+
+          {sub.status !== "closed" && <DiscountControl sub={sub} onChange={refresh} onError={setError} />}
 
           <div className="overflow-x-auto rounded border bg-white">
             <table className="w-full text-left text-sm">

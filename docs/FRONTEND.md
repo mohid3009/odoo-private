@@ -12,7 +12,7 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `/catalog` → `/catalog/products`, `/catalog/plans`, `/catalog/taxes`, `/catalog/terms` | staff (read-only) + admin | Config-driven CRUD via `CrudPage` + config in `pages/Catalog.tsx` | 2 |
 | `/templates`, `/subscriptions`, `/subscriptions/new`, `/subscriptions/:id` | staff+admin | Lists/forms/detail | 3 |
 | `/invoices`, `/invoices/:id`, `/invoices/:id/print`, `/billing` | staff+admin | Invoices, print view, Run billing | 4 |
-| `/discounts` | admin | Discounts | 5 |
+| `/discounts`, `/discounts/:id/redemptions` | admin writes, staff read-only | Discounts (`CrudPage` config) + redemptions audit; the attach control lives on `/subscriptions/:id` | 5 |
 | `/payments` | staff+admin | Payments list | 6 |
 | `/notifications` | admin | Log, retry, toggles, test-send | 7 |
 | `/dashboard` | staff+admin | KPIs, summaries, overdue | 8 |
