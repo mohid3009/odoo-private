@@ -20,8 +20,11 @@ export default function Login() {
         onSuccess={() => navigate(from, { replace: true })}
       />
       <p className="mt-4 flex justify-between text-sm">
-        <Link className="text-indigo-700" to="/signup">Create an account</Link>
-        <Link className="text-indigo-700" to="/forgot-password">Forgot password?</Link>
+        <Link className="text-sky-700" to="/signup">Create an account</Link>
+        <Link className="text-sky-700" to="/forgot-password">Forgot password?</Link>
+      </p>
+      <p className="mt-2 text-sm">
+        <Link className="text-sky-700" to="/welcome">← Back to Brightloop</Link>
       </p>
     </AuthShell>
   );

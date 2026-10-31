@@ -42,7 +42,7 @@ interface Props {
 
 type Form = UseFormReturn<Record<string, any>>;
 
-const input = "w-full rounded border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none";
+const input = "w-full rounded border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none";
 const MONEY = /^-?\d+(\.\d{1,2})?$/;
 
 // DRF error bodies: {field: [msg]}, {detail: msg}, or nested {profile: {field: [msg]}} -> flat {field: msg}
@@ -208,7 +208,7 @@ export default function ResourceForm({ fields, submitLabel, onSubmit, defaultVal
         );
       })}
       <div className="flex gap-2">
-        <button type="submit" disabled={isSubmitting} className="rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+        <button type="submit" disabled={isSubmitting} className="rounded bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700 disabled:opacity-50">
           {isSubmitting ? "Please wait…" : submitLabel}
         </button>
         {onCancel && <button type="button" className="rounded border px-4 py-2" onClick={onCancel}>Cancel</button>}

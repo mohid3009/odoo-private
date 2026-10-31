@@ -13,7 +13,7 @@ const STATUSES = ["draft", "quotation", "confirmed", "active", "paused", "closed
 
 export function SubscriptionsShell() {
   const tab = ({ isActive }: { isActive: boolean }) =>
-    `rounded px-3 py-1 text-sm ${isActive ? "bg-indigo-600 text-white" : "border bg-white text-slate-700"}`;
+    `rounded px-3 py-1 text-sm ${isActive ? "bg-sky-600 text-white" : "border bg-white text-slate-700"}`;
   return (
     <div className="space-y-4">
       <nav className="flex flex-wrap gap-2" aria-label="Subscription sections">
@@ -26,7 +26,7 @@ export function SubscriptionsShell() {
 }
 
 const columns: Column<any>[] = [
-  { key: "number", header: "Number", render: (r) => <Link className="font-medium text-indigo-700" to={`/subscriptions/${r.id}`}>{r.number}</Link> },
+  { key: "number", header: "Number", render: (r) => <Link className="font-medium text-sky-700" to={`/subscriptions/${r.id}`}>{r.number}</Link> },
   { key: "customer_email", header: "Customer" },
   { key: "plan_name", header: "Plan" },
   { key: "status", header: "Status", render: (r) => <StatusBadge status={r.status} /> },
@@ -59,7 +59,7 @@ export function SubscriptionList() {
           {plans.data?.results.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <input aria-label="Search" placeholder="Number or customer…" className="rounded border px-3 py-1 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button className="rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => navigate("/subscriptions/new")}>New subscription</button>
+        <button className="rounded bg-sky-600 px-3 py-1 text-sm text-white" onClick={() => navigate("/subscriptions/new")}>New subscription</button>
       </div>
       <DataTable<any> queryKey="subscriptions" endpoint="/api/subscriptions/" columns={columns} params={params} empty="No subscriptions match."
         onRowClick={(r) => navigate(`/subscriptions/${r.id}`)} />
@@ -73,7 +73,7 @@ export function NewSubscription() {
   const [mode, setMode] = useState<"template" | "blank">("template");
   const done = (sub: any) => { qc.invalidateQueries({ queryKey: ["subscriptions"] }); navigate(`/subscriptions/${sub.id}`); };
   const tab = (m: typeof mode, label: string) => (
-    <button type="button" className={`rounded px-3 py-1 text-sm ${mode === m ? "bg-indigo-600 text-white" : "border bg-white"}`} onClick={() => setMode(m)}>{label}</button>
+    <button type="button" className={`rounded px-3 py-1 text-sm ${mode === m ? "bg-sky-600 text-white" : "border bg-white"}`} onClick={() => setMode(m)}>{label}</button>
   );
 
   return (

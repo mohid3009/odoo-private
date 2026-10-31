@@ -43,7 +43,7 @@ Odoo Community 18.0 (XML-RPC) as accounting ledger. Session cookie + CSRF, same 
 - **Billing**: UNIQUE (subscription, period_start) + `select_for_update(skip_locked)`; catch-up ≤ 12 periods; never past expiry.
 - **Notifications**: always through `notify()`; UNIQUE `dedupe_key`; sending never fails the originating request.
 - **UI**: config objects feeding `DataTable`, `ResourceForm`, `StatusBadge`, `ConfirmButton`, `RoleGuard`, `MoneyText`. No bespoke pages.
-- **Roles**: `admin | staff | customer` on `User.role`. Public signup creates customers only.
+- **Roles**: `admin | staff | customer` on `User.role`. Public signup creates customers; staff/admin signup needs a server-side code (D-044).
 
 ## Working rules (condensed from KICKOFF §0)
 1. Phase by phase; don't start N+1 until N's acceptance checks pass (run them, show output).

@@ -1,3 +1,6 @@
+import hmac
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -79,6 +82,8 @@ class SignupSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True, max_length=150, default="")
     whatsapp_number = serializers.CharField(required=False, allow_blank=True, default="")
     whatsapp_opt_in = serializers.BooleanField(required=False, default=False)
+    account_type = serializers.ChoiceField(choices=[Role.CUSTOMER, Role.STAFF, Role.ADMIN], required=False, default=Role.CUSTOMER)
+    signup_code = serializers.CharField(required=False, allow_blank=True, write_only=True, default="")
 
     def validate_email(self, value):
         return value.strip().lower()
@@ -87,14 +92,26 @@ class SignupSerializer(serializers.Serializer):
         return whatsapp_number(value)
 
     def validate(self, attrs):
+        kind = attrs["account_type"]
+        if kind != Role.CUSTOMER:  # D-044: staff/admin only with the server's secret code; empty setting = disabled
+            expected = {Role.STAFF: settings.STAFF_SIGNUP_CODE, Role.ADMIN: settings.ADMIN_SIGNUP_CODE}[kind]
+            if not expected:
+                raise serializers.ValidationError({"account_type": f"{kind.title()} sign-up is not enabled on this server."})
+            if not hmac.compare_digest(attrs["signup_code"].encode(), expected.encode()):
+                raise serializers.ValidationError({"signup_code": "That registration code is not valid."})
+            return attrs
         if attrs["whatsapp_opt_in"] and not attrs["whatsapp_number"]:
             raise serializers.ValidationError({"whatsapp_number": "A number is required to opt in to WhatsApp."})
         return attrs
 
     @transaction.atomic
     def create(self, v):
-        # role is never read from input: public signup creates customers only (FR-AUTH-01)
-        user = User.objects.create_user(v["email"], v["password"], name=v["name"], role=Role.CUSTOMER)
+        # `role` is never read from input; the account type was checked against the signup code in validate() (D-044)
+        kind = v["account_type"]
+        extra = {"is_superuser": True} if kind == Role.ADMIN else {}
+        user = User.objects.create_user(v["email"], v["password"], name=v["name"], role=kind, **extra)
+        if kind != Role.CUSTOMER:
+            return user
         CustomerProfile.objects.create(
             user=user,
             whatsapp_number=v["whatsapp_number"],

@@ -15,7 +15,7 @@ const discounts: CrudConfig<any> = {
     { key: "mins", header: "Minimums", render: (r) => [r.min_quantity && `qty ≥ ${r.min_quantity}`, r.min_purchase_amount && `₹${r.min_purchase_amount}`].filter(Boolean).join(", ") || "—" },
     {
       key: "used_count", header: "Used",
-      render: (r) => <Link className="text-indigo-700" to={`/discounts/${r.id}/redemptions`} onClick={(e) => e.stopPropagation()}>{r.used_count} / {r.usage_limit ?? "∞"}</Link>,
+      render: (r) => <Link className="text-sky-700" to={`/discounts/${r.id}/redemptions`} onClick={(e) => e.stopPropagation()}>{r.used_count} / {r.usage_limit ?? "∞"}</Link>,
     },
     { key: "state", header: "State", render: (r) => <StatusBadge status={r.state} /> },
   ],

@@ -52,7 +52,7 @@ export default function Billing() {
             <label htmlFor="as-of" className="mb-1 block text-sm font-medium">Billing date</label>
             <input id="as-of" type="date" className="rounded border px-3 py-2" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
           </div>
-          <button className="rounded bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-50" disabled={busy || !asOf} onClick={run}>
+          <button className="rounded bg-sky-600 px-4 py-2 font-medium text-white disabled:opacity-50" disabled={busy || !asOf} onClick={run}>
             {busy ? "Running…" : "Run billing"}
           </button>
         </div>
@@ -65,7 +65,7 @@ export default function Billing() {
               <span className="font-semibold">{result.skipped}</span> skipped (already billed) ·{" "}
               <span className={`font-semibold ${result.errors ? "text-red-700" : ""}`}>{result.errors}</span> error{result.errors === 1 ? "" : "s"}
             </p>
-            {result.created > 0 && <p className="mt-2"><Link className="text-indigo-700" to="/invoices?status=draft">Review the new drafts →</Link></p>}
+            {result.created > 0 && <p className="mt-2"><Link className="text-sky-700" to="/invoices?status=draft">Review the new drafts →</Link></p>}
             {log && <pre className="mt-2 whitespace-pre-wrap rounded bg-red-50 p-2 text-xs text-red-800">{log}</pre>}
           </div>
         )}

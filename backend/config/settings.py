@@ -134,6 +134,10 @@ ODOO_PASSWORD = os.environ.get("ODOO_PASSWORD") or os.environ.get("ODOO_API_KEY"
 # --- payments (D-041): failed attempts allowed per invoice before it is flagged and further attempts are refused ---
 PAYMENT_MAX_ATTEMPTS = int(os.environ.get("PAYMENT_MAX_ATTEMPTS", "3"))
 
+# --- staff/admin self-registration (D-044): empty = disabled ---
+STAFF_SIGNUP_CODE = os.environ.get("STAFF_SIGNUP_CODE", "")
+ADMIN_SIGNUP_CODE = os.environ.get("ADMIN_SIGNUP_CODE", "")
+
 # --- notifications (D-020..D-025) ---
 WHATSAPP_PROVIDER = os.environ.get("WHATSAPP_PROVIDER", "console")
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")

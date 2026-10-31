@@ -215,3 +215,37 @@ def test_for_user_scopes_rows():
     assert CustomerProfile.objects.for_user(staff).count() == 2
     assert CustomerProfile.objects.for_user(AnonymousUser()).count() == 0
     assert not CustomerProfile.objects.for_user(c2).filter(user=c1).exists()
+
+
+# --- staff / admin self-registration (D-044) ---------------------------------------------
+
+@pytest.mark.parametrize("kind,setting", [("staff", "STAFF_SIGNUP_CODE"), ("admin", "ADMIN_SIGNUP_CODE")])
+def test_staff_and_admin_signup_need_the_right_code(settings, kind, setting):
+    setattr(settings, setting, "s3cret-code")
+    c = APIClient()
+    assert signup(c, account_type=kind).status_code == 400  # no code
+    r = signup(c, account_type=kind, signup_code="wrong")
+    assert r.status_code == 400 and "signup_code" in r.json() and not User.objects.filter(email="new@shop.com").exists()
+    r = signup(c, account_type=kind, signup_code="s3cret-code")
+    assert r.status_code == 201 and r.json()["role"] == kind and r.json()["profile"] is None
+    u = User.objects.get(email="new@shop.com")
+    assert u.role == kind and u.is_superuser == (kind == "admin") and not hasattr(u, "profile")
+
+
+def test_a_staff_code_does_not_open_admin_signup(settings):
+    settings.STAFF_SIGNUP_CODE, settings.ADMIN_SIGNUP_CODE = "staff-code", "admin-code"
+    assert signup(APIClient(), account_type="admin", signup_code="staff-code").status_code == 400
+
+
+@pytest.mark.parametrize("kind", ["staff", "admin"])
+def test_staff_admin_signup_is_disabled_when_no_code_is_configured(settings, kind):
+    settings.STAFF_SIGNUP_CODE = settings.ADMIN_SIGNUP_CODE = ""
+    r = signup(APIClient(), account_type=kind, signup_code="")
+    assert r.status_code == 400 and "account_type" in r.json() and User.objects.count() == 0
+
+
+def test_customer_signup_ignores_a_code_and_unknown_types_are_rejected(settings):
+    settings.ADMIN_SIGNUP_CODE = "admin-code"
+    r = signup(APIClient(), account_type="customer", signup_code="admin-code")
+    assert r.status_code == 201 and r.json()["role"] == "customer"
+    assert signup(APIClient(), email="x@shop.com", account_type="superhero").status_code == 400

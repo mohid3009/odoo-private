@@ -9,7 +9,7 @@ const sync = { key: "odoo_sync_status", header: "Odoo", render: (r: any) => <Sta
 
 export function CatalogShell() {
   const tab = ({ isActive }: { isActive: boolean }) =>
-    `rounded px-3 py-1 text-sm ${isActive ? "bg-indigo-600 text-white" : "border bg-white text-slate-700"}`;
+    `rounded px-3 py-1 text-sm ${isActive ? "bg-sky-600 text-white" : "border bg-white text-slate-700"}`;
   return (
     <div className="space-y-4">
       <nav className="flex flex-wrap gap-2" aria-label="Catalog sections">

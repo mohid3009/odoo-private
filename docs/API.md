@@ -23,7 +23,7 @@ User JSON: `{id, email, name, role, profile}`; `profile` is `null` for staff/adm
 | Method | Path | Role | Request → Response |
 |---|---|---|---|
 | GET | `/auth/csrf/` | any | sets `csrftoken` cookie → `{"detail":"ok"}` |
-| POST | `/auth/signup/` | anon | `{email, password, name?, whatsapp_number?, whatsapp_opt_in?}` → 201 user (`role` is always `customer`; any `role` sent is ignored). 400 `{email:[…]}` duplicate in any case, `{password:[…]}` policy, `{whatsapp_number:[…]}` invalid / missing when opting in. Does **not** log in |
+| POST | `/auth/signup/` | anon | `{email, password, name?, whatsapp_number?, whatsapp_opt_in?, account_type?: customer|staff|admin, signup_code?}` → 201 user. `account_type` defaults to `customer`; `staff` / `admin` need `signup_code` equal to `STAFF_SIGNUP_CODE` / `ADMIN_SIGNUP_CODE` (D-044). A wrong or missing code is 400 `{signup_code:[…]}`; if that code is not configured on the server the type is disabled (also 400). Staff/admin get no customer profile and ignore the WhatsApp fields. A `role` field is still ignored. 400 `{email:[…]}` duplicate in any case, `{password:[…]}` policy, `{whatsapp_number:[…]}` invalid / missing when opting in. Does **not** log in |
 | POST | `/auth/login/` | anon | `{email, password}` (email case-insensitive) → 200 user · 400 `{"detail":"Invalid email or password."}` (identical for unknown email and wrong password) |
 | POST | `/auth/logout/` | auth | → 204 |
 | GET | `/auth/me/` | auth | → user |

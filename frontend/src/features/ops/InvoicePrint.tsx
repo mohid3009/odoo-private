@@ -15,8 +15,8 @@ export default function InvoicePrint() {
   return (
     <div className="mx-auto max-w-3xl bg-white p-6 sm:p-10">
       <div className="no-print mb-6 flex items-center gap-3">
-        <Link className="text-sm text-indigo-700" to={`/invoices/${id}`}>← Back</Link>
-        <button className="ml-auto rounded bg-indigo-600 px-4 py-1 text-sm text-white" onClick={() => window.print()}>Print / Save as PDF</button>
+        <Link className="text-sm text-sky-700" to={`/invoices/${id}`}>← Back</Link>
+        <button className="ml-auto rounded bg-sky-600 px-4 py-1 text-sm text-white" onClick={() => window.print()}>Print / Save as PDF</button>
       </div>
 
       <header className="flex items-start justify-between border-b pb-4">

@@ -1,6 +1,6 @@
 # RBAC
 
-Roles: `admin`, `staff`, `customer` (`User.role`). Public signup → `customer` only. Only an admin creates staff (and other admins).
+Roles: `admin`, `staff`, `customer` (`User.role`). Public signup → `customer` unless the visitor presents the server's staff/admin signup code (D-044; both codes are empty = disabled by default). An admin can always create staff and other admins from the Staff page.
 Enforcement is server-side: **permission classes** (what actions) + **`for_user()` querysets** (which rows). React hiding is cosmetic.
 
 ## Capability matrix

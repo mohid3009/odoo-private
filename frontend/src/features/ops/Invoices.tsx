@@ -15,7 +15,7 @@ const CHIPS: { key: string; label: string; params: Record<string, string> }[] = 
 ];
 
 const columns: Column<any>[] = [
-  { key: "number", header: "Invoice", render: (r) => <Link className="font-medium text-indigo-700" to={`/invoices/${r.id}`}>{r.number ?? `Draft #${r.id}`}</Link> },
+  { key: "number", header: "Invoice", render: (r) => <Link className="font-medium text-sky-700" to={`/invoices/${r.id}`}>{r.number ?? `Draft #${r.id}`}</Link> },
   { key: "customer_email", header: "Customer" },
   { key: "subscription_number", header: "Subscription" },
   {
@@ -56,7 +56,7 @@ export function InvoiceList() {
       <div className="flex flex-wrap gap-2" role="group" aria-label="Invoice filters">
         {CHIPS.map((c) => (
           <button key={c.key} type="button" aria-pressed={chip === c.key} onClick={() => setChip(c.key)}
-            className={`rounded-full px-3 py-1 text-sm ${chip === c.key ? "bg-indigo-600 text-white" : "border bg-white text-slate-700"}`}>
+            className={`rounded-full px-3 py-1 text-sm ${chip === c.key ? "bg-sky-600 text-white" : "border bg-white text-slate-700"}`}>
             {c.label}
           </button>
         ))}

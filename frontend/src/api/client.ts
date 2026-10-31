@@ -11,6 +11,8 @@ function csrfToken(): string {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  // Mock mode (docs/MOCK_MODE.md): serve a recorded snapshot instead of calling Django. Off => the real API, unchanged.
+  if (import.meta.env.VITE_USE_MOCK === "true") return (await import("./mock")).mockRequest<T>(method, path, body);
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (method !== "GET") headers["X-CSRFToken"] = csrfToken();

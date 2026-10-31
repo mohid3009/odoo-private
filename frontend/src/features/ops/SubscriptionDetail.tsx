@@ -45,7 +45,7 @@ function DiscountControl({ sub, onChange, onError }: { sub: any; onChange: (fres
         <option value="">{sub.discount ? "Replace with…" : "Attach a discount…"}</option>
         {rules.data?.results.map((d: any) => <option key={d.id} value={d.id}>{d.name} ({d.type === "percent" ? `${Number(d.value)}%` : `₹${d.value}`})</option>)}
       </select>
-      <button className="rounded bg-indigo-600 px-3 py-1 text-white disabled:opacity-50" disabled={!choice}
+      <button className="rounded bg-sky-600 px-3 py-1 text-white disabled:opacity-50" disabled={!choice}
         onClick={() => call(() => api.post(`/api/subscriptions/${sub.id}/discount/`, { discount: Number(choice) }))}>Attach</button>
     </section>
   );
@@ -59,7 +59,7 @@ export default function SubscriptionDetail() {
   const { data: sub, isLoading, isError } = useQuery({ queryKey: ["subscriptions", "detail", id], queryFn: () => api.get<any>(`/api/subscriptions/${id}/`) });
 
   if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
-  if (isError || !sub) return <p className="py-6 text-red-700">Subscription not found. <Link className="text-indigo-700" to="/subscriptions">Back to the list</Link></p>;
+  if (isError || !sub) return <p className="py-6 text-red-700">Subscription not found. <Link className="text-sky-700" to="/subscriptions">Back to the list</Link></p>;
 
   const refresh = (fresh: any) => {
     qc.setQueryData(["subscriptions", "detail", id], fresh);
@@ -78,7 +78,7 @@ export default function SubscriptionDetail() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <Link className="text-sm text-indigo-700" to="/subscriptions">← Subscriptions</Link>
+        <Link className="text-sm text-sky-700" to="/subscriptions">← Subscriptions</Link>
         <h1 className="text-xl font-semibold">{sub.number}</h1>
         <StatusBadge status={sub.status} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -86,7 +86,7 @@ export default function SubscriptionDetail() {
           {sub.actions.map((a: string) =>
             a === "closed"
               ? <ConfirmButton key={a} danger label="Close" confirmText="Close this subscription?" onConfirm={() => run(a)} />
-              : <button key={a} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => run(a)}>{label(a)}</button>)}
+              : <button key={a} className="rounded bg-sky-600 px-3 py-1 text-sm text-white" onClick={() => run(a)}>{label(a)}</button>)}
         </div>
       </div>
       {error && <p role="alert" className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

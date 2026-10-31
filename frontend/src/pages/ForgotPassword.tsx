@@ -12,7 +12,7 @@ export default function ForgotPassword() {
         onSubmit={async (v) => { await api.get("/api/auth/csrf/"); return api.post("/api/auth/password-reset/request/", v); }}
         successMessage="If that email is registered, a reset link has been sent."
       />
-      <p className="mt-4 text-sm"><Link className="text-indigo-700" to="/login">Back to log in</Link></p>
+      <p className="mt-4 text-sm"><Link className="text-sky-700" to="/login">Back to log in</Link></p>
     </AuthShell>
   );
 }

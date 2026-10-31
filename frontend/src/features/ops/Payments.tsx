@@ -6,7 +6,7 @@ import StatusBadge from "../../components/StatusBadge";
 
 const columns: Column<any>[] = [
   { key: "payment_date", header: "Date" },
-  { key: "invoice_number", header: "Invoice", render: (r) => <Link className="text-indigo-700" to={`/invoices/${r.invoice}`}>{r.invoice_number ?? `#${r.invoice}`}</Link> },
+  { key: "invoice_number", header: "Invoice", render: (r) => <Link className="text-sky-700" to={`/invoices/${r.invoice}`}>{r.invoice_number ?? `#${r.invoice}`}</Link> },
   { key: "customer_email", header: "Customer" },
   { key: "attempt_number", header: "Attempt" },
   { key: "method", header: "Method", render: (r) => r.method.replace("_", " ") },

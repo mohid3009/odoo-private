@@ -54,7 +54,7 @@ function PaymentsSection({ inv, onChanged }: { inv: any; onChanged: () => void }
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-lg font-semibold">Payments</h2>
         <span className="text-sm text-slate-600">Failed attempts: <strong>{inv.failed_attempts}</strong> of {inv.max_payment_attempts}</span>
-        {canPay && <button className="ml-auto rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => setDialog({ kind: "pay" })}>Record payment</button>}
+        {canPay && <button className="ml-auto rounded bg-sky-600 px-3 py-1 text-sm text-white" onClick={() => setDialog({ kind: "pay" })}>Record payment</button>}
       </div>
 
       {inv.payment_needs_attention && (
@@ -88,7 +88,7 @@ function PaymentsSection({ inv, onChanged }: { inv: any; onChanged: () => void }
                   <span className="block text-slate-400">by {p.recorded_by_email ?? "—"}</span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
-                  {retriable(p) && <button className="mr-2 text-indigo-700" onClick={() => setDialog({ kind: "retry", p })}>Retry</button>}
+                  {retriable(p) && <button className="mr-2 text-sky-700" onClick={() => setDialog({ kind: "retry", p })}>Retry</button>}
                   {isAdmin && p.status === "completed" && <button className="text-red-700" onClick={() => setDialog({ kind: "reverse", p })}>Reverse</button>}
                 </td>
               </tr>
@@ -123,7 +123,7 @@ export default function InvoiceDetail() {
   const { data: inv, isLoading, isError } = useQuery({ queryKey: ["invoices", "detail", id], queryFn: () => api.get<any>(`/api/invoices/${id}/`) });
 
   if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
-  if (isError || !inv) return <p className="py-6 text-red-700">Invoice not found. <Link className="text-indigo-700" to="/invoices">Back to the list</Link></p>;
+  if (isError || !inv) return <p className="py-6 text-red-700">Invoice not found. <Link className="text-sky-700" to="/invoices">Back to the list</Link></p>;
 
   const act = async (action: "confirm" | "cancel" | "send", message = "", body?: unknown) => {
     setError(""); setNote("");
@@ -141,13 +141,13 @@ export default function InvoiceDetail() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <Link className="text-sm text-indigo-700" to="/invoices">← Invoices</Link>
+        <Link className="text-sm text-sky-700" to="/invoices">← Invoices</Link>
         <h1 className="text-xl font-semibold">{inv.number ?? `Draft invoice #${inv.id}`}</h1>
         <StatusBadge status={inv.status} />
         {inv.is_overdue && <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">{inv.days_overdue} days overdue</span>}
         {inv.payment_needs_attention && <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white">Payment needs attention</span>}
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {inv.actions.includes("confirm") && <button className="rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => act("confirm", "Confirmed. The customer has been notified.")}>Confirm</button>}
+          {inv.actions.includes("confirm") && <button className="rounded bg-sky-600 px-3 py-1 text-sm text-white" onClick={() => act("confirm", "Confirmed. The customer has been notified.")}>Confirm</button>}
           {inv.actions.includes("send") && (
             <>
               <button className="rounded border px-3 py-1 text-sm" onClick={() => act("send", "Email queued for the customer.", { channels: ["email"] })}>Send via email</button>
@@ -163,7 +163,7 @@ export default function InvoiceDetail() {
 
       <dl className="grid gap-4 rounded border bg-white p-4 sm:grid-cols-3">
         <Field label="Customer">{inv.customer_email}</Field>
-        <Field label="Subscription"><Link className="text-indigo-700" to={`/subscriptions/${inv.subscription}`}>{inv.subscription_number}</Link></Field>
+        <Field label="Subscription"><Link className="text-sky-700" to={`/subscriptions/${inv.subscription}`}>{inv.subscription_number}</Link></Field>
         <Field label="Service period">{inv.period_start} → {inv.period_end}</Field>
         <Field label="Invoice date">{inv.invoice_date}</Field>
         <Field label="Due date">{inv.due_date}</Field>

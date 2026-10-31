@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
 import DataTable, { Column } from "../../components/DataTable";
 import StatusBadge from "../../components/StatusBadge";
+import TemplateBlocks from "./TemplateBlocks";
 
 const err = (e: unknown) => (e instanceof ApiError && (e.body as any)?.detail ? (e.body as any).detail : "That did not work.");
 const sel = "rounded border px-2 py-1 text-sm";
@@ -85,16 +86,6 @@ function LogTab() {
   );
 }
 
-function TemplateEditor({ body, onSave }: { body: string; onSave: (b: string) => void }) {
-  const [v, setV] = useState(body);
-  return (
-    <div className="flex gap-2">
-      <textarea aria-label="Message template" rows={2} className="w-full rounded border px-2 py-1" value={v} onChange={(e) => setV(e.target.value)} />
-      <button className="self-start rounded border px-3 py-1 disabled:opacity-40" disabled={v === body || !v.trim()} onClick={() => onSave(v)}>Save</button>
-    </div>
-  );
-}
-
 function EventsTab() {
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["notifications", "events"], queryFn: () => api.get<any[]>("/api/notifications/events/") });
@@ -121,7 +112,7 @@ function EventsTab() {
             <label className="flex items-center gap-1"><input type="checkbox" checked={e.enabled_email} onChange={(ev) => save(e.code, { enabled_email: ev.target.checked })} /> Email</label>
             <label className="flex items-center gap-1"><input type="checkbox" checked={e.enabled_whatsapp} onChange={(ev) => save(e.code, { enabled_whatsapp: ev.target.checked })} /> WhatsApp</label>
           </div>
-          <TemplateEditor key={e.template_body} body={e.template_body} onSave={(b) => save(e.code, { template_body: b })} />
+          <TemplateBlocks key={e.template_body} body={e.template_body} onSave={(b) => save(e.code, { template_body: b })} />
         </div>
       ))}
     </div>
@@ -169,7 +160,7 @@ function ToolsTab() {
         </select>
         <input aria-label="Recipient" className={`${sel} block w-full`} placeholder={channel === "email" ? "name@example.com" : "+919876543210"} value={to} onChange={(e) => setTo(e.target.value)} />
         <textarea aria-label="Message" rows={3} className="w-full rounded border px-2 py-1" value={body} onChange={(e) => setBody(e.target.value)} />
-        <button className="rounded bg-indigo-600 px-3 py-1 text-white disabled:opacity-40" disabled={busy || !to || !body} onClick={test}>Send test</button>
+        <button className="rounded bg-sky-600 px-3 py-1 text-white disabled:opacity-40" disabled={busy || !to || !body} onClick={test}>Send test</button>
         {result && <p role="status">{result}</p>}
       </section>
       <section className="space-y-2 rounded border bg-white p-4 text-sm">
@@ -193,7 +184,7 @@ export default function Notifications() {
       <div className="flex gap-2 border-b" role="tablist">
         {TABS.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${tab === k ? "border-indigo-600 font-medium" : "border-transparent text-slate-600"}`}>{label}</button>
+            className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${tab === k ? "border-sky-600 font-medium" : "border-transparent text-slate-600"}`}>{label}</button>
         ))}
       </div>
       {tab === "log" && <LogTab />}

@@ -17,7 +17,7 @@ export default function ResetPassword() {
         onSubmit={async (v) => { await api.get("/api/auth/csrf/"); return api.post("/api/auth/password-reset/confirm/", { uid, token, new_password: v.new_password }); }}
         successMessage="Password updated. You can log in now."
       />
-      <p className="mt-4 text-sm"><Link className="text-indigo-700" to="/login">Go to log in</Link></p>
+      <p className="mt-4 text-sm"><Link className="text-sky-700" to="/login">Go to log in</Link></p>
     </AuthShell>
   );
 }

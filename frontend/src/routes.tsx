@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import RoleGuard from "./components/RoleGuard";
 import { insightRoutes } from "./features/insight/routes";
 import { opsRoutes } from "./features/ops/routes";
+import BrightloopIntro from "./pages/BrightloopIntro";
 import ForgotPassword from "./pages/ForgotPassword";
 import Forbidden from "./pages/Forbidden";
 import Landing from "./pages/Landing";
@@ -17,6 +18,7 @@ import Signup from "./pages/Signup";
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/welcome" element={<BrightloopIntro />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

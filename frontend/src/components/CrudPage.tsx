@@ -39,7 +39,7 @@ export default function CrudPage<T extends { id: number }>({ config }: { config:
     ? [...config.columns, {
         key: "_actions", header: "", render: (row) => (
           <span className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-            <button className="text-indigo-700" onClick={() => { setError(""); setMode({ row }); }}>Edit</button>
+            <button className="text-sky-700" onClick={() => { setError(""); setMode({ row }); }}>Edit</button>
             <ConfirmButton danger label="Delete" onConfirm={async () => {
               setError("");
               try { await api.del(`${config.endpoint}${row.id}/`); refresh(); }
@@ -55,7 +55,7 @@ export default function CrudPage<T extends { id: number }>({ config }: { config:
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold">{config.title}</h1>
         <input className="ml-auto rounded border px-3 py-1 text-sm" placeholder="Search…" aria-label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-        {canWrite && <button className="rounded bg-indigo-600 px-3 py-1 text-sm text-white" onClick={() => { setError(""); setMode({ row: null }); }}>New {config.noun}</button>}
+        {canWrite && <button className="rounded bg-sky-600 px-3 py-1 text-sm text-white" onClick={() => { setError(""); setMode({ row: null }); }}>New {config.noun}</button>}
       </div>
       {!canWrite && <p className="text-sm text-slate-500">Read-only for your role.</p>}
       {error && <p role="alert" className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
