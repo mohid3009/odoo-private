@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, HttpResponseServerError, JsonResponse
 from django.urls import include, path, re_path
 
 from .health import health
@@ -14,6 +14,20 @@ def spa(request):
     return FileResponse(open(index, "rb"), content_type="text/html")
 
 
+def api_not_found(request):
+    """Unknown /api/ paths answer like the rest of the API (JSON), not with an HTML page."""
+    return JsonResponse({"detail": "Not found."}, status=404)
+
+
+def server_error(request):
+    """handler500 (DEBUG=false): JSON for the API so the SPA can show its error toast; never a stack trace."""
+    if request.path.startswith("/api/"):
+        return JsonResponse({"detail": "Server error. It has been logged; please try again."}, status=500)
+    return HttpResponseServerError("<h1>Server error</h1>")
+
+
+handler500 = server_error
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     re_path(r"^api/healthz/?$", health),
@@ -25,5 +39,6 @@ urlpatterns = [
     path("api/", include("apps.finance.payments.urls")),
     path("api/", include("apps.finance.notifications.urls")),
     path("api/", include("apps.finance.dashboard.urls")),
+    re_path(r"^api/(?:.*/)?$", api_not_found),  # slash-terminated only, so APPEND_SLASH still redirects /api/plans -> /api/plans/
     re_path(r"^(?!api/|admin/|static/).*$", spa),
 ]

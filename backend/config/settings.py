@@ -16,8 +16,13 @@ def env_list(key, default=""):
     return [x.strip() for x in os.environ.get(key, default).split(",") if x.strip()]
 
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
+DEV_SECRET_KEY = "dev-insecure-key-change-me"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", DEV_SECRET_KEY)
 DEBUG = env_bool("DEBUG", True)
+if not DEBUG and SECRET_KEY == DEV_SECRET_KEY:  # never ship the public dev key (sessions and reset links are signed with it)
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("DEBUG=false needs DJANGO_SECRET_KEY set to a long random value.")
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:5173").rstrip("/")
@@ -49,6 +54,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",  # X-Frame-Options: DENY
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -98,10 +104,12 @@ if FRONTEND_DIST.is_dir():
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = False  # the SPA reads csrftoken and echoes it as X-CSRFToken
-if not DEBUG:
+if not DEBUG:  # behind the HTTPS tunnel / proxy (D-005)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)  # the tunnel already terminates TLS
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))  # opt in: HSTS sticks to a hostname for its lifetime
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],

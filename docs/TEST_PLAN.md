@@ -14,6 +14,7 @@ Frontend: no unit tests (rule 12) — manual checklist below, run in Phase 9.
 | 5 | percent/fixed · min qty / min purchase unmet · before start / after end · limit 2 with 3 eligible → exactly 2 · scope product vs subscription · race-safe counter · staff create 403 |
 | 6 | partial then full → Paid exactly at the sum · overpayment rejected · draft/cancelled rejected · overdue rule (D-013) · denormalized totals equal recomputation |
 | 7 | The 8 tests in `NOTIFICATIONS.md` §9 (`tests/test_notifications.py`, `tests/test_notifications_phase7.py`) · Twilio request shape and error mapping (HTTP mocked) · retry sweep · log / events / test-send / reminders permissions · timeline scope for staff |
+| 9 | `tests/test_hardening.py`: `DEBUG=false` refuses the dev key, security headers, JSON 404/500 for the API, APPEND_SLASH still works · `tests/test_demo_flow.py`: the whole demo script S1–S7 through the API on an empty DB |
 | 8 | `tests/test_portal_isolation.py`: customer A → B's subscription / invoice / print / invoice payments / payment → 404 (same as a missing id), lists and filters leak nothing, customer actions 403 before any lookup · `tests/test_dashboard.py`: KPIs, by-plan, by-month and overdue order equal a hand-computed fixture; customer / plan / status / date filters; failed, reversed, draft and cancelled rows never count; bad filters 400; customer and anonymous 403; query count independent of row count |
 
 ## Run the suite on PostgreSQL (required before a release; D-042)
@@ -31,15 +32,17 @@ prints `endpoint · ms · query count`, **exits non-zero if any call > 1.0 s**. 
 Browser check: Network tab, dashboard < 2 s on a cold load.
 
 ## Manual QA checklist (Phase 9)
-- [ ] Fresh DB → `seed` → three demo logins work; each role sees different navigation
-- [ ] Signup rejects weak passwords & duplicate email (any case); reset link appears in console and works once
-- [ ] Customer cannot open `/staff`, `/dashboard`, other customers' ids (typed in URL) → 403/404 page
-- [ ] Catalog: product with Brand variant (+560), monthly plan; non-admin has no edit controls and API refuses
-- [ ] Template → subscription → Quotation → Confirmed → Active; illegal buttons hidden; direct API call returns 409
-- [ ] Run billing → invoices; run again → 0 new; confirm → number assigned; print view saves as PDF
-- [ ] Discount 10 %, limit 2: appears on next two invoices, not the third; negative line visible
-- [ ] Partial payment shows balance; final payment → Paid; overdue chip highlights days overdue
-- [ ] Dashboard KPIs match Payments/Invoices pages; filters work; loads < 2 s on big seed
+Status after Phase 9 (browser = checked by hand in that phase's acceptance; API = `tests/test_demo_flow.py`):
+- [x] Fresh DB → `seed` → three demo logins work; each role sees different navigation (browser, Phase 1 and 9 prod mode)
+- [x] Signup rejects weak passwords & duplicate email (any case); reset link appears in console and works once (browser Phase 1; API)
+- [x] Customer cannot open `/staff`, `/dashboard`, other customers' ids (typed in URL) → 403/404 page (browser Phase 1/8; API)
+- [x] Catalog: product with Brand variant (+560), monthly plan; non-admin has no edit controls and API refuses (browser Phase 2; API)
+- [x] Template → subscription → Quotation → Confirmed → Active; illegal buttons hidden; direct API call returns 409 (browser Phase 3; API)
+- [x] Run billing → invoices; run again → 0 new; confirm → number assigned; print view saves as PDF (browser Phase 4/9; API)
+- [x] Discount 10 %, limit 2: appears on next two invoices, not the third; negative line visible (browser Phase 5; API)
+- [x] Partial payment shows balance; final payment → Paid; overdue chip highlights days overdue (browser Phase 6; API)
+- [x] Dashboard KPIs match Payments/Invoices pages; filters work; loads < 2 s on big seed (browser Phase 8: summary 92–148 ms)
 - [ ] Notification log shows sent rows; reruns don't duplicate; WhatsApp on phone (Twilio sandbox, joined)
 - [ ] Odoo (if enabled): confirmed invoice visible in Odoo UI with correct lines/tax/total
-- [ ] Mobile width: nav usable, tables scroll; tunnel URL works on mobile data
+- [x] Mobile width (375 px, Phase 9): nav wraps, no page-level sideways scroll, tables scroll inside their box
+- [ ] Tunnel URL works on a phone on mobile data (not run: no tunnel tool on the dev laptop)

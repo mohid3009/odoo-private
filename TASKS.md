@@ -93,15 +93,23 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] Customer self-service pause/close/renew in the portal: not built (KICKOFF §9 cut item 3)
 
 ## Phase 9 — Hardening, demo, deploy (5:35–6:00)
-- [ ] README + DEMO_SCRIPT final; TASKS honest
-- [ ] Error/empty/loading states, 404/403
-- [ ] Single container build; `DEBUG=false`; tunnel tested from phone
-- [ ] Fresh-DB rehearsal S1–S7 + WhatsApp; manual QA checklist; tag `v1.0`
+- [x] README rewritten (verified local path, one-URL production mode + tunnel steps, Docker marked as not yet run, demo and big-seed logins, test/perf commands, honest limitations); DEMO_SCRIPT rewritten — **fixed: the old script started the subscription on a future date, so "Activate" would have been refused live**; now `START` = three months back, matching the rehearsal test
+- [x] Hardening (backend): `DEBUG=false` refuses to start with the public dev secret key; `X-Frame-Options: DENY` (+ nosniff, same-origin referrer); unknown `/api/…/` paths answer JSON 404 (slashless URLs still redirect); `handler500` answers JSON for the API and never leaks a traceback; opt-in `SECURE_SSL_REDIRECT` / `SECURE_HSTS_SECONDS`. `manage.py check --deploy` with `DEBUG=false`: only W004 (HSTS, opt-in) and W008 (SSL redirect; the tunnel terminates TLS) remain, both deliberate
+- [x] Hardening (frontend): error toasts from the one API client for what a page cannot show inline — network failure, 5xx, expired session (inline 4xx form errors unchanged); `ErrorBoundary` instead of a blank screen on a render crash; `ConfirmButton` disarms even when the action fails. Loading / empty / error states were already in `DataTable` and the detail pages; 404 and 403 pages exist
+- [x] Full suite: **PostgreSQL 403 passed / 0 skipped; sqlite 395 passed / 8 skipped**; frontend build passes
+- [x] Fresh-DB rehearsal: `tests/test_demo_flow.py` runs S1–S7 + notifications through the API on an empty DB (signup rules, reset link, staff creation, catalog with variant 1560.00, template → active, billing 9204.00 and rerun 0, discount limit 2 → 8283.60, 8283.60, 9204.00, partial → paid, overdue, dashboard KPIs, customer scoping, reminders rerun adds nothing)
+- [x] Production mode in the browser on a fresh PostgreSQL DB (`DEBUG=false`, real secret key, built SPA served by Django/WhiteNoise on one URL): login through the form with Secure cookies, role menus, Run billing (1 created), 404 page, session-expired toast after a server-side logout, network-error toast with the server stopped
+- [ ] Single-container `docker compose build web`: **not run** (Docker engine still down on this laptop, D-030)
+- [ ] Tunnel from a phone on mobile data: **not run** (no `cloudflared`/`ngrok` installed here); steps are in the README
+- [ ] WhatsApp on a real phone (Twilio sandbox): **not run** (no credentials here); console provider verified
+- [ ] Tag `v1.0` and freeze `main`: waiting for the team's go-ahead (merging the phase branches into `main` first)
 
 ## Cut
 - **Odoo local bring-up (Phase 0)** — Docker Desktop's engine did not come up on the dev laptop (error dialog on startup; needs someone to look at its window). Running with `ODOO_ENABLED=false`. Files ready: `docker-compose.yml`, `odoo/config/odoo.conf`, `Makefile odoo-init`, `backend/scripts/odoo_smoke.py`. Retry on a Docker-capable machine / in Phase 4.
 
 ## Bugs
+- **Fixed in Phase 9:** `docs/DEMO_SCRIPT.md` S3 started the subscription in the future (2026-11-01), and the server refuses to activate before the start date — the live demo would have stalled at S3. Caught by writing `tests/test_demo_flow.py`.
+- Phase 9 note: on Windows a refused connection to `localhost` takes ~2 s (IPv6 first), so the network-error toast appears ~2 s after the click.
 - **Fixed in Phase 6 (found by running the suite on PostgreSQL; hidden by sqlite since Phase 3):** `services.transition()` locked the subscription with `select_for_update()` while joining the optional `template`, which PostgreSQL rejects (`FOR UPDATE cannot be applied to the nullable side of an outer join`). On the real database **every subscription status change returned HTTP 500** (34 tests failed on Postgres, all green on sqlite). PRs #3 and #4 contain the bug. Fixed by locking only the main row (`of=("self",)`) in the five joined locks (also stops billing's `skip_locked` from skipping subscriptions that merely share a plan). The full suite must be run against PostgreSQL before any release (`docs/TEST_PLAN.md`).
 - Phase 6 notes: `docs/PRD.md` only defines FR-PAY-01…06, so the status / retry / reversal / attempt-limit rules are tracked in D-041, not as FR-PAY-07…10; the attempt limit counts failed attempts since the last completed payment or admin reset (so several good part-payments never exhaust it); "pay" is offered only while attempts remain.
 - Fixed in Phase 4 (found by driving the UI): Django's stock console email backend raises on a Windows cp1252 console when the body contains `₹`, so every invoice email in dev logged `failed` (the confirm still succeeded, as designed). Replaced by `ConsoleEmailBackend` (D-039); the failed row was retried and went out.
