@@ -28,6 +28,10 @@ def actions_for(invoice, user):
         out += ["confirm", "cancel"]
     elif invoice.status == S.CONFIRMED:
         out.append("send")
+        if invoice.amount_due > 0 and invoice.failed_attempts < settings.PAYMENT_MAX_ATTEMPTS:
+            out.append("pay")  # record / retry a payment attempt
+        if user.role == "admin" and invoice.payment_needs_attention:
+            out.append("reset_attempts")
         if user.role == "admin" and invoice.amount_paid == 0:
             out.append("cancel")
     elif invoice.status == S.PAID:
@@ -49,7 +53,7 @@ def invoice_context(invoice):
 @transaction.atomic
 def confirm(invoice, user):
     _staff_only(user)
-    inv = Invoice.objects.select_for_update().select_related("customer", "subscription").get(pk=invoice.pk)
+    inv = Invoice.objects.select_for_update(of=("self",)).select_related("customer", "subscription").get(pk=invoice.pk)
     if inv.status != S.DRAFT:
         raise TransitionError("illegal_transition", f"Only a draft invoice can be confirmed (this one is {inv.status}).")
     if not inv.lines.filter(kind="product").exists():

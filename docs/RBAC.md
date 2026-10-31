@@ -17,8 +17,10 @@ Enforcement is server-side: **permission classes** (what actions) + **`for_user(
 | Run billing | ✔ | ✔ | ✘ |
 | Invoices — list/confirm/cancel/send | ✔ all | ✔ all | ✘ |
 | Invoices — view / print own | ✔ | ✔ | ✔ |
-| Record payments | ✔ | ✔ | ✘ |
-| Payments — list | ✔ all | ✔ all | own only |
+| Record a payment attempt / retry a failed one | ✔ | ✔ | ✘ |
+| Reverse a completed payment, reset the attempt limit | ✔ | ✘ | ✘ |
+| Payments — list | ✔ all | ✔ all | own only, customer-safe fields (no notes, reasons, audit trail, recorder) |
+| See the "needs attention" flag and attempt counter | ✔ | ✔ | ✘ |
 | Dashboard | ✔ | ✔ | ✘ |
 | Notifications log / retry / toggles / test-send | ✔ | ✘ | ✘ |
 | Own notification settings | ✔ | ✔ | ✔ |

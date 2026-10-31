@@ -145,8 +145,39 @@ Attaches a **subscription-scope** rule (replacing any attached one). 400 if the 
 - percent = `value%` of the base; fixed = `value`, capped at the base. A rule is counted **once per invoice** (`used_count + 1`, one `DiscountRedemption`), even if it discounts several lines.
 - The discount shows on the invoice as its own negative line (`kind: "discount"`); `discount_total` is the positive amount saved.
 
-## Phase 6 — Payments (planned)
-`POST /invoices/{id}/payments/ {amount, method, payment_date, note?}` → payment (400 overpay / bad invoice state), `GET /payments/` (filters `invoice, method, date range`).
+## Phase 6 — Payments (implemented)
+Payments are recorded by hand against a **confirmed** invoice (no gateway). A payment row is an **attempt** with a `status`; rows are never edited or deleted over the API (PATCH/PUT/DELETE → 405), a mistake is undone by a **reversal**, so the history stays complete. Money = strings (2 dp). Rules and state machine: `docs/STATE_MACHINES.md`, data: `docs/DATA_MODEL.md`, decisions: D-041.
+
+**Core rules**
+- `status` ∈ `completed | failed | reversed`. **Only `completed` payments count** toward `invoice.amount_paid`; `amount_paid = Σ completed`, `amount_due = total − amount_paid`, recomputed under a row lock on every change. A `failed` attempt never touches the balance.
+- The invoice becomes `paid` exactly when `amount_due` reaches 0, and goes back to `confirmed` when a reversal makes the balance positive again.
+- **Attempts:** `invoice.failed_attempts` counts failed attempts since the last completed payment (or the last admin reset). A new attempt gets `attempt_number = failed_attempts + 1`. The limit is `PAYMENT_MAX_ATTEMPTS` (setting/env, default **3**). When the limit is reached the invoice is flagged `payment_needs_attention = true` and further attempts are refused (409 `max_attempts_reached`) until an admin resets it. A completed payment resets the counter.
+- Overpayment is rejected (D-019): an attempted amount may not exceed the current balance, whatever its status.
+
+### `POST /invoices/{id}/payments/` · staff, admin → 201
+Body: `{ amount, method, status?: "completed"|"failed" (default completed), failure_reason? (required when failed), payment_date?, note? }` — `method` ∈ `cash | bank_transfer | upi | card | cheque | other`; `payment_date` defaults to today and may not be in the future.
+Response: the payment (see fields below) plus `invoice_state: { status, amount_paid, amount_due, failed_attempts, payment_needs_attention }`. After commit a completed payment sends `PAYMENT_RECEIVED` (never blocks or fails the request).
+Errors: 400 `{amount}` (≤ 0, > 2 decimals, or more than the balance) · 400 `{failure_reason}` missing for a failed attempt · 400 `{payment_date}` future / `{method}` / `{status}` unknown (`reversed` cannot be recorded, only produced by a reversal) · 409 `illegal_transition` when the invoice is draft, cancelled or already paid · 409 `max_attempts_reached` · 403 customers/anonymous.
+
+### `POST /payments/{id}/retry/` · staff, admin → 201
+Retries a **failed** attempt: same body as above. Creates a new row with `retry_of = {id}` and the next `attempt_number`. Allowed only if the payment is `failed`, has not been retried before, and the limit is not reached. 409 `illegal_transition` (not failed / invoice no longer payable), 409 `guard_failed` (already retried), 409 `max_attempts_reached`.
+
+### `POST /payments/{id}/reverse/` `{ "reason": "…" }` · **admin only** → 200
+Reverses a **completed** payment: `status → reversed`, stores `reversed_at`, `reversed_by`, `reversal_reason` (required, non-blank; 400 otherwise). Recomputes the invoice: the balance is restored and a `paid` invoice goes back to `confirmed` (so it is overdue again if its due date has passed). The row is kept. 409 `illegal_transition` for failed/reversed payments or a cancelled invoice. Staff → 403.
+
+### `POST /invoices/{id}/reset-payment-attempts/` `{ "reason": "…" }` · **admin only** → 200 invoice detail
+Clears `failed_attempts` and `payment_needs_attention` so payments can be attempted again; the failed rows stay. Reason required. 409 `guard_failed` if the invoice is not flagged / not confirmed.
+
+### `GET /invoices/{id}/payments/` · any role (scoped) · `GET /payments/` · `GET /payments/{id}/`
+Paginated, newest first. Staff/admin see everything; **a customer sees only payments on their own invoices** (other ids → 404) and only the customer-safe fields.
+Filters on `/payments/`: `invoice`, `status`, `method`, `customer`, `payment_date_after`, `payment_date_before` (inclusive), `needs_attention=true` (payments of flagged invoices); `?search=` on invoice number, customer email, note; `?ordering=` on `payment_date, amount, id, attempt_number`.
+Payment fields (staff/admin): `id, invoice, invoice_number, customer_email, amount, method, payment_date, note, status, attempt_number, retry_of, retried_by (id of the retrying row|null), failure_reason, recorded_by_email, created_at, reversed_at, reversed_by_email, reversal_reason, odoo_sync_status`; the detail adds `events:[{kind, by_user_email, at, detail}]` (the audit trail: `recorded | failed | retried | reversed | attention_flagged | attention_reset`). Customers get `id, invoice, invoice_number, amount, method, payment_date, status, attempt_number, created_at` only.
+
+### Invoice changes
+List/detail gain `payment_needs_attention` and `failed_attempts` (staff/admin only; removed for customers). Detail also has `max_payment_attempts` (the configured limit, staff/admin only), `payments` and the actions `"pay"` (confirmed, balance > 0, attempts left, staff/admin) and `"reset_attempts"` (flagged, admin). `GET /invoices/?needs_attention=true` lists flagged invoices. Overdue is unchanged (D-013): a partial payment leaves an invoice overdue; the payment that clears the balance makes it `paid`; a reversal can make it overdue again.
+
+### Odoo
+Payment mirroring to Odoo is optional and **not implemented** (KICKOFF §9 cut): `odoo_sync_status` stays `skipped`, nothing in the payment flow calls Odoo, and everything works with `ODOO_ENABLED=false` (and with it `true`: a test proves no Odoo call is made).
 
 ## Phase 7 — Notifications · Phase 8 — Portal/Dashboard (planned)
 `GET /notifications/logs/`, `POST /notifications/logs/{id}/retry/`, `GET|PATCH /notifications/events/`, `POST /notifications/test-send/`,
