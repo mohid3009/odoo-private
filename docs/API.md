@@ -199,6 +199,37 @@ Log row: `{id, event, event_label, channel, provider, recipient_user, recipient_
 Skip reasons on a `skipped` row: `event_disabled`, `email_opt_out`, `no_opt_in`, `invalid_number`, `provider_disabled` (WhatsApp provider selected but not configured).
 Delivery: `sent` after the provider accepts; `failed` rows retry at +1 min, +5 min, +30 min (3 attempts) via `manage.py send_notifications`.
 
-## Phase 8 — Portal/Dashboard (planned)
-`GET /dashboard/summary/?from&to&customer&plan&status` → `{kpis, by_plan, by_month, overdue:{count,results}}`.
-Portal reuses `/subscriptions/` and `/invoices/` (scoped by role); no separate endpoints.
+## Phase 8 — Portal, dashboard, performance (D-044)
+
+### Dashboard
+`GET /dashboard/summary/` — **staff, admin** (customer 403, anonymous 403). All numbers come from aggregate queries; money is a 2-dp string.
+
+Query params (all optional; a bad value is 400 with field errors):
+
+| Param | Default | Applies to |
+|---|---|---|
+| `from`, `to` (YYYY-MM-DD, `from ≤ to`) | first day of the month 11 months ago … today | `revenue_collected`, `invoiced`, `by_month`, `by_plan.invoiced/collected` |
+| `customer` (user id) | — | everything |
+| `plan` (plan id) | — | everything |
+| `status` (subscription status) | — | everything (invoices/payments of subscriptions in that status) |
+| `page` | 1 | the `overdue` list (25 per page) |
+
+Response:
+```
+{ "filters": {from, to, customer, plan, status},
+  "kpis": { active_subscriptions, mrr, arr, revenue_collected, invoiced, outstanding, overdue_count, overdue_amount },
+  "by_plan":  [ {plan_id, plan_name, billing_period, active_subscriptions, mrr, invoiced, collected} ],   // every plan with any data
+  "by_month": [ {month: "YYYY-MM", invoiced, collected} ],                                               // every month in range, zeros included
+  "overdue":  { count, next, previous, results: [ {id, number, customer_email, subscription_number, plan_name, due_date, days_overdue, amount_due} ] } }
+```
+Definitions: **MRR** (D-017) = Σ pre-tax line amounts of *active* subscriptions normalised to a month (daily ×30, weekly ×52/12, monthly ×1, yearly ÷12), ARR = MRR × 12.
+**revenue_collected / collected** = Σ `completed` payments with `payment_date` in range (failed and reversed attempts never count).
+**invoiced** = Σ `total` of confirmed + paid invoices with `invoice_date` in range. **outstanding** = Σ `amount_due` of confirmed invoices (a balance as of today, not range-limited).
+**overdue** (D-013) = confirmed, `amount_due > 0`, `due_date < today`; the list is sorted by days overdue (oldest due date first), then id.
+
+### Portal (customer)
+No new endpoints: the portal reads `/subscriptions/`, `/subscriptions/{id}/`, `/invoices/`, `/invoices/{id}/`, `/invoices/{id}/print/` and `/payments/`, all scoped in the queryset.
+A customer gets **404** for another customer's subscription, invoice or payment id (detail, print, payments sub-list and every action), never a 403 that would confirm the id exists.
+
+### Performance gate
+`python scripts/seed_demo.py --big` (≈ 5 000 subscriptions, 15 000 invoices, 10 000 payments, `bulk_create`) then `python scripts/perf_check.py`: every list endpoint (page 1 and a deep page) and the dashboard, as admin and as a big customer; prints ms + query count; exits 1 if any call > 1.0 s.

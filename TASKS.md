@@ -81,10 +81,16 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] Acceptance with `WHATSAPP_PROVIDER=twilio` on a joined phone: **not run** (no Twilio credentials here); the adapter is verified only against a mocked HTTP layer
 
 ## Phase 8 — Portal, dashboard, performance (5:05–5:35) [S1/S7]
-- [ ] Portal (my subscriptions / invoices, read-only)
-- [ ] `GET /dashboard/summary/` + React dashboard
-- [ ] `seed_demo.py --big`, `perf_check.py` green (< 1.0 s per call)
-- [ ] Tests: cross-customer 404s; dashboard = hand-computed values
+- [x] API-first: `docs/API.md` Phase 8 written before code; D-044 logged
+- [x] Portal (`features/insight`, read-only): My subscriptions (+ new detail page with lines and that subscription's invoices), My invoices → print view, My payments, My notifications. Print view "← Back" now goes to `/my-invoices` for customers (was the staff page → 403, Phase 4 gap)
+- [x] **Fixed a routing bug:** the customer Payments route and the staff `/payments` route shared one path, so React Router matched the customer route first and **staff/admin got the 403 page on Payments** in the merged Phase 7 branches. Customer pages now live under `/my-*` (`/my-payments`)
+- [x] `GET /dashboard/summary/` (`apps/finance/dashboard`): KPIs (active, MRR, ARR, revenue collected, invoiced, outstanding, overdue count/amount), by plan, by month (zeros included), paginated overdue list sorted by days overdue; filters from/to, customer, plan, subscription status; 15 queries whatever the data size
+- [x] React dashboard (`features/insight/Dashboard.tsx`): filter bar (dates, customer type-ahead, plan, status, reset), KPI cards with drill-down links (`/subscriptions?status=active`, `/invoices?status=overdue`), by-plan / by-month tables with CSS bars (Recharts skipped), overdue table with paging; subscription list now reads `?status=&plan=` from the URL
+- [x] `seed_demo.py --big`: 500 customers, 5 000 subscriptions, ~16 400 invoices (~1 360 overdue), ~14 300 payments (completed / partial / failed) in ~20 s via `bulk_create`; idempotent (second run skips)
+- [x] `perf_check.py` **green on PostgreSQL 16 with the big seed: 34 calls (every list page 1 + last page, filtered lists, details, dashboard ×3, customer portal), slowest 333 ms (dashboard filtered by status), budget 1 000 ms**. No index or N+1 fix was needed; `/notifications/events/` runs a fixed 29 queries (lazy catalog creation), not per row
+- [x] Tests: `tests/test_portal_isolation.py` (11) and `tests/test_dashboard.py` (14). Full suite: **PostgreSQL 396 passed / 0 skipped; sqlite 388 passed / 8 skipped** (the PostgreSQL-only concurrency tests). Frontend `npm run build` passes
+- [x] Acceptance, in the browser on the big seed (Postgres): dashboard summary request 92–148 ms, plan and customer filters and overdue paging work, KPI cards drill down to filtered lists; admin `/payments` shows the staff list (14 337 rows); customer `big-0001@big.seed` sees 10 own subscriptions, the detail page, print view with Back → My invoices, 32 own payments; `/dashboard` → 403 page; `/my-subscriptions/2` (someone else's) → "not found", API 404
+- [ ] Customer self-service pause/close/renew in the portal: not built (KICKOFF §9 cut item 3)
 
 ## Phase 9 — Hardening, demo, deploy (5:35–6:00)
 - [ ] README + DEMO_SCRIPT final; TASKS honest

@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../api/client";
+import { useAuth } from "../../auth/AuthProvider";
 import MoneyText from "../../components/MoneyText";
 
 // Browser "Save as PDF" is the PDF (D-016). Layout/nav and the toolbar carry the no-print class (index.css).
 export default function InvoicePrint() {
   const { id } = useParams();
+  const { user } = useAuth();
   const { data: inv, isLoading, isError } = useQuery({ queryKey: ["invoices", "print", id], queryFn: () => api.get<any>(`/api/invoices/${id}/print/`) });
 
   if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
@@ -15,7 +17,8 @@ export default function InvoicePrint() {
   return (
     <div className="mx-auto max-w-3xl bg-white p-6 sm:p-10">
       <div className="no-print mb-6 flex items-center gap-3">
-        <Link className="text-sm text-indigo-700" to={`/invoices/${id}`}>← Back</Link>
+        {/* customers have no access to the staff invoice page: back to their portal list */}
+        <Link className="text-sm text-indigo-700" to={user?.role === "customer" ? "/my-invoices" : `/invoices/${id}`}>← Back</Link>
         <button className="ml-auto rounded bg-indigo-600 px-4 py-1 text-sm text-white" onClick={() => window.print()}>Print / Save as PDF</button>
       </div>
 

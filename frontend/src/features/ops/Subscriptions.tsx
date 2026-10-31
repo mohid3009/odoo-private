@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Page } from "../../api/types";
 import DataTable, { Column } from "../../components/DataTable";
@@ -37,8 +37,9 @@ const columns: Column<any>[] = [
 
 export function SubscriptionList() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState("");
-  const [plan, setPlan] = useState("");
+  const [sp] = useSearchParams(); // /subscriptions?status=active&plan=3 (dashboard drill-down)
+  const [status, setStatus] = useState(sp.get("status") ?? "");
+  const [plan, setPlan] = useState(sp.get("plan") ?? "");
   const [search, setSearch] = useState("");
   const plans = useQuery({ queryKey: ["options", "/api/plans/"], queryFn: () => api.get<Page<any>>("/api/plans/?page_size=200") });
   const params: Record<string, string> = {};
