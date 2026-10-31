@@ -1,0 +1,352 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Inter+Tight:wght@400;500;600;700;800&display=swap");
+
+.hero-40 {
+  --font-geist-mono: "Geist Mono", monospace;
+  --font-geist-sans: "Inter Tight", "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+  --ink: #FFFFFF;
+  --muted: #9A9AA3;
+  --paper: #0B0B0D;
+  --hero-bg: #0B0B0D;
+  --subtext: #C8C8D0;
+  --microcopy: #8A8A94;
+  --btn-bg: #FFFFFF;
+  --btn-hover: #E2E2E8;
+  --btn-text: #0B0B0D;
+  --frame-border: rgba(255, 255, 255, 0.08);
+
+  color: var(--ink);
+  background: var(--hero-bg);
+  font-family: var(--font-geist-sans);
+  position: relative;
+  isolation: isolate;
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.hero-40,
+.hero-40 * {
+  box-sizing: border-box;
+}
+
+.hero-40 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hero-40 .landing {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fullscreen Edge-to-Edge Hero (100vw x 100vh) */
+.hero-40 .hero {
+  position: relative;
+  isolation: isolate;
+  width: 100vw;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--hero-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Subtle dark vignette gradient fade at bottom of hero */
+.hero-40 .hero::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: clamp(80px, 14vh, 160px);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(11, 11, 13, 0.75) 65%,
+    #0B0B0D 100%
+  );
+  pointer-events: none;
+}
+
+.hero-40 .noise {
+  position: absolute;
+  inset: 0;
+  z-index: -4;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.hero-40 .site-header {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 24px clamp(24px, 4vw, 72px);
+}
+
+.hero-40 .brand {
+  justify-self: start;
+  font-size: clamp(20px, 1.5vw, 26px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-40 .brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFFFFF, #9A9AA3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.hero-40 .desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 2vw, 36px);
+  font-size: 14px;
+  letter-spacing: -0.015em;
+  color: #C8C8D0;
+}
+
+.hero-40 .desktop-nav a,
+.hero-40 .scroll-cue {
+  position: relative;
+  transition: opacity 180ms ease, color 180ms ease;
+}
+
+.hero-40 .desktop-nav a:hover,
+.hero-40 .scroll-cue:hover {
+  color: #FFFFFF;
+  opacity: 1;
+}
+
+.hero-40 .header-cta,
+.hero-40 .primary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--btn-text);
+  background: var(--btn-bg);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.5);
+  border-radius: 999px;
+  font-weight: 600;
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 200ms ease;
+}
+
+.hero-40 .header-cta:hover,
+.hero-40 .primary-cta:hover {
+  transform: translateY(-2px);
+  background: var(--btn-hover);
+  box-shadow: 0 0 36px rgba(255, 255, 255, 0.42), 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+.hero-40 .header-cta {
+  justify-self: end;
+  min-width: 120px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+}
+
+/* Content Anchored at the Lower Right to completely clear the hand asset */
+.hero-40 .hero-content {
+  position: absolute;
+  z-index: 5;
+  right: clamp(24px, 4.5vw, 84px);
+  bottom: clamp(60px, 8vh, 84px);
+  left: auto;
+  width: min(500px, 90vw);
+  text-align: left;
+}
+
+.hero-40 .eyebrow {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Compact, elegant headline that never encroaches on the hand asset */
+.hero-40 h1 {
+  margin: 0;
+  font-size: clamp(26px, 2.8vw, 42px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.hero-40 .headline-line {
+  display: block;
+  white-space: normal;
+  color: #FFFFFF;
+}
+
+.hero-40 .headline-line-muted {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.hero-40 .hero-copy {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  color: var(--subtext);
+  max-width: 440px;
+}
+
+.hero-40 .primary-cta {
+  margin-top: 18px;
+  min-width: 125px;
+  padding: 9px 20px;
+  font-size: 13px;
+}
+
+.hero-40 .header-cta span,
+.hero-40 .primary-cta span {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.hero-40 .primary-cta:hover span,
+.hero-40 .header-cta:hover span {
+  transform: translate(2px, -2px);
+}
+
+.hero-40 .dither-layer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  opacity: 1;
+}
+
+.hero-40 .hero-footer {
+  position: absolute;
+  z-index: 10;
+  right: clamp(24px, 4.5vw, 84px);
+  bottom: 20px;
+  left: clamp(24px, 4.5vw, 84px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  color: var(--microcopy);
+  font-size: 11.5px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 10px;
+}
+
+.hero-40 .hero-footer p {
+  margin: 0;
+}
+
+.hero-40 .hero-footer p:last-child {
+  justify-self: end;
+  text-align: right;
+  opacity: 0.7;
+}
+
+.hero-40 .scroll-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--microcopy);
+  cursor: pointer;
+}
+
+.hero-40 .scroll-cue span {
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .hero-40 .site-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px 20px;
+  }
+
+  .hero-40 .desktop-nav {
+    display: none;
+  }
+
+  .hero-40 .header-cta {
+    min-width: auto;
+    padding: 7px 15px;
+    font-size: 12px;
+  }
+
+  .hero-40 .hero-content {
+    position: absolute;
+    right: 20px;
+    bottom: 60px;
+    left: 20px;
+    width: auto;
+  }
+
+  .hero-40 .eyebrow {
+    margin-bottom: 6px;
+    font-size: 10px;
+  }
+
+  .hero-40 h1 {
+    font-size: clamp(24px, 6.5vw, 32px);
+    line-height: 1.05;
+  }
+
+  .hero-40 .hero-copy {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .hero-40 .primary-cta {
+    margin-top: 14px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+  }
+
+  .hero-40 .hero-footer {
+    right: 20px;
+    left: 20px;
+    bottom: 14px;
+    grid-template-columns: 1fr auto;
+    font-size: 11px;
+  }
+
+  .hero-40 .hero-footer p:last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-40,
+  .hero-40 *,
+  .hero-40 *::before,
+  .hero-40 *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

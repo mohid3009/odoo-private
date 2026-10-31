@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color-scheme: dark;
+  }
+}
+
+/* Custom subtle vignette and glow effects */
+.bg-vignette {
+  background: radial-gradient(ellipse at 50% 45%, rgba(18, 18, 22, 0) 0%, rgba(8, 8, 10, 0.92) 100%);
+}
+
+.text-gradient-silver {
+  background: linear-gradient(180deg, #FFFFFF 0%, #A8A8B2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 @media print {
   nav, .no-print { display: none !important; }
 }
