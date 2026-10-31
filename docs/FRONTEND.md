@@ -15,8 +15,8 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `/discounts`, `/discounts/:id/redemptions` | admin writes, staff read-only | Discounts (`CrudPage` config) + redemptions audit; the attach control lives on `/subscriptions/:id` | 5 |
 | `/payments` | staff+admin | Payments list | 6 |
 | `/notifications` | admin | Message log, events and templates, test send, run reminders | 7 |
-| `/dashboard` | staff+admin | KPIs, summaries, overdue | 8 |
-| `/portal`, `/portal/subscriptions`, `/portal/invoices/:id`, `/portal/settings` | customer | Self-service (read-only) | 8 |
+| `/dashboard` | staff+admin | KPI cards (drill down to `/subscriptions?status=active`, `/invoices?status=overdue`), filter bar, by-plan and by-month tables (CSS bars), paginated overdue list | 8 |
+| `/my-subscriptions`, `/my-subscriptions/:id`, `/my-invoices`, `/my-payments`, `/my-notifications` (+ `/invoices/:id/print`) | customer | Portal, read-only. Customer pages use `/my-*` paths: two routes on one path shadow each other, which made `/payments` customer-only for staff until Phase 8 | 6–8 |
 | `/403`, `*` | any | Forbidden / Not found | 9 |
 
 ## Folder ownership
