@@ -27,6 +27,9 @@ class Invoice(models.Model):
     total = models.DecimalField(**MONEY)
     amount_paid = models.DecimalField(**MONEY, default=0)  # kept in step with payments by apps.finance.payments
     amount_due = models.DecimalField(**MONEY)
+    # Phase 6 (D-041): both maintained only by apps.finance.payments.services, under the invoice row lock
+    failed_attempts = models.PositiveSmallIntegerField(default=0)  # failed payment attempts since the last completed payment / admin reset
+    payment_needs_attention = models.BooleanField(default=False)  # failed_attempts reached PAYMENT_MAX_ATTEMPTS
     odoo_move_id = models.PositiveIntegerField(null=True, blank=True)
     odoo_sync_status = models.CharField(max_length=10, default="skipped")
     odoo_error = models.TextField(blank=True)
@@ -44,6 +47,7 @@ class Invoice(models.Model):
             models.Index(fields=["status", "due_date"]),
             models.Index(fields=["customer"]),
             models.Index(fields=["invoice_date"]),
+            models.Index(fields=["payment_needs_attention"]),
         ]
 
     def __str__(self):

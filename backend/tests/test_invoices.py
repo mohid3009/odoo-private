@@ -237,8 +237,8 @@ def test_detail_shows_lines_totals_and_actions(make_sub, staff, admin):
 
 
 @pytest.mark.parametrize("status,paid,role,expected", [
-    ("confirmed", "0.00", "staff", ["send"]), ("confirmed", "0.00", "admin", ["send", "cancel"]),
-    ("confirmed", "50.00", "admin", ["send"]), ("paid", "9204.00", "staff", ["send"]), ("cancelled", "0.00", "admin", []),
+    ("confirmed", "0.00", "staff", ["send", "pay"]), ("confirmed", "0.00", "admin", ["send", "pay", "cancel"]),
+    ("confirmed", "50.00", "admin", ["send", "pay"]), ("paid", "9204.00", "staff", ["send"]), ("cancelled", "0.00", "admin", []),
 ])
 def test_available_actions(draft, status, paid, role, expected):
     Invoice.objects.filter(pk=draft.pk).update(status=status, amount_paid=D(paid))

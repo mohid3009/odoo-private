@@ -16,6 +16,14 @@ Frontend: no unit tests (rule 12) — manual checklist below, run in Phase 9.
 | 7 | The 8 tests in `NOTIFICATIONS.md` §9 |
 | 8 | Customer A → B's subscription/invoice/payment → 404 · dashboard numbers equal hand-computed fixture |
 
+## Run the suite on PostgreSQL (required before a release; D-042)
+sqlite silently ignores `FOR UPDATE`, so it can neither verify concurrency nor catch Postgres-only errors (a nullable-join lock bug hid behind it from Phase 3 to Phase 6).
+```
+cd backend
+DATABASE_URL=postgres://<user>@localhost:5432/<anydb> python -m pytest -q      # pytest-django creates and drops test_<anydb>
+```
+Expected: 0 skipped. With sqlite the PostgreSQL-only tests (billing runs, subscription numbering, payment races) show as **skipped**, never as passed. Phase 6 added a mutation check: temporarily remove `select_for_update` from `payments/services.py::_lock_invoice` and the lock-dependent concurrency tests must fail.
+
 ## Performance method (Phase 8)
 `python scripts/seed_demo.py --big` → ~5k subs, ~15k invoices, ~10k payments (`bulk_create`).
 `python scripts/perf_check.py` logs in as admin, calls every list endpoint (page 1 and a deep page) and `/dashboard/summary/`,

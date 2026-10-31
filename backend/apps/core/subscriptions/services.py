@@ -105,7 +105,9 @@ def _guard(ok, message):
 def transition(sub, to, user=None, today=None):
     """Move `sub` to status `to`. `user=None` means the system (activate_due, billing auto-close)."""
     today = today or timezone.localdate()
-    sub = Subscription.objects.select_for_update().select_related("plan__product", "template").get(pk=sub.pk)
+    # of=("self",): lock only the subscription row. Without it PostgreSQL also locks the joined rows and refuses outright
+    # when a joined relation is nullable ("FOR UPDATE cannot be applied to the nullable side of an outer join": `template`).
+    sub = Subscription.objects.select_for_update(of=("self",)).select_related("plan__product", "template").get(pk=sub.pk)
     frm, plan = sub.status, sub.plan
     if user is not None and not is_staff(user):
         raise TransitionError("illegal_transition", "Only staff or admin can change a subscription's status.")
@@ -147,7 +149,7 @@ def transition(sub, to, user=None, today=None):
 @transaction.atomic
 def renew(sub, user):
     """D-014: extend the expiry by the original term (expiry - start). Needs plan.allow_renew."""
-    sub = Subscription.objects.select_for_update().select_related("plan").get(pk=sub.pk)
+    sub = Subscription.objects.select_for_update(of=("self",)).select_related("plan").get(pk=sub.pk)
     if not is_staff(user):
         raise TransitionError("illegal_transition", "Only staff or admin can renew a subscription.")
     _guard(sub.status == S.ACTIVE, "Only an active subscription can be renewed.")

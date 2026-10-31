@@ -119,7 +119,9 @@ def bill_subscription(sub_id, as_of, stats, hooks=discount_hooks):
     for _ in range(MAX_CATCHUP):
         with transaction.atomic():
             sub = (
-                Subscription.objects.select_for_update(skip_locked=True)
+                # of=("self",): lock the subscription only. Locking the joined plan/payment-term rows too would make
+                # skip_locked skip a subscription just because another one on the same plan is being billed.
+                Subscription.objects.select_for_update(skip_locked=True, of=("self",))
                 .select_related("plan", "payment_term").filter(pk=sub_id).first()
             )
             if sub is None or sub.status != S.ACTIVE or not sub.next_invoice_date:
