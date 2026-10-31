@@ -50,10 +50,12 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] 2 Postgres-only concurrency tests (`test_concurrent_runs_create_no_duplicates`, concurrent numbering) skipped on sqlite — run against Postgres
 
 ## Phase 5 — Discounts (3:50–4:10) [S5]
-- [ ] Discount CRUD (admin), attach/detach, redemptions list
-- [ ] React Discounts page, attach control, discount lines on invoice/print
-- [ ] Tests incl. limit 2 with 3 eligible → exactly 2
-- [ ] Acceptance: 10 % limit-2 rule hits next two invoices, not the third
+- [x] Discount CRUD (admin write, staff read), `GET /discounts/{id}/redemptions/`, attach/detach on a subscription (`POST|DELETE /subscriptions/{id}/discount/`, staff + admin); computed `state` (inactive / scheduled / active / expired / exhausted)
+- [x] Engine integration through the Phase 4 hook (`apps/finance/discounts/services.py`: `pick_discounts → reserve → record`); one rule per line (largest saving) + one subscription rule; usage counted once per invoice with a single conditional `UPDATE`; rolled back with a failed invoice
+- [x] React: Discounts page (`features/insight`, admin writes, staff read-only) with usage `n / limit` linking to a redemptions audit view; attach/detach control on the subscription detail page; discount lines already render on invoice, detail and print view
+- [x] Tests (67 new, 282 total passing, 2 skipped): validation table, permission matrix, date window on the billing date, minimums, fixed capped at the line, largest wins / tie → older rule, one use per invoice for several lines, subscription rule stacking + proportional split with different tax rates, **limit 2 across 3 invoices (sequential) and 3 eligible invoices in one run → exactly 2**, last-use race, rollback gives the use back, rerun never double-uses, cancel keeps the use, attach/detach rules
+- [x] Acceptance, in the browser: admin created "Launch 10%" (limit 2); December billing of 20 eligible subscriptions → **exactly 2 invoices discounted** (sample = the worked example, total ₹8,283.60); January → 0; the rule shows `2 / 2 Exhausted` and the redemptions page lists both invoices; "Bundle 5%" attached on a subscription applied to that subscription's next invoice only (₹234.00 off ₹4,680.00); staff see the page read-only and get 403 on create
+- [ ] Concurrency of `reserve` against real Postgres row locks is covered by a sequential test only; the conditional `UPDATE` is atomic by construction, but run the billing concurrency tests on Postgres too
 
 ## Phase 6 — Payments (4:10–4:30) [S6]
 - [ ] `POST /invoices/{id}/payments/`, payments list
