@@ -94,10 +94,35 @@ Only `active` with an `expiry_date`, and `plan.allow_renew` (409 `code: guard_fa
 ### `POST /subscriptions/from-template/` `{ template, customer, start_date, expiry_date?, payment_term?, notes? }` · staff, admin → 201 subscription detail (draft)
 Plan = the template's plan; lines copied from the template with prices computed as above; `template` is recorded and `quotation_valid_until = today + validity_days` is pre-set (FR-SUB-01; it is recomputed when moved to `quotation`). Inactive template → 400.
 
-## Phase 4 — Billing (planned)
-`POST /billing/run/ {as_of?}` → `{run_id, created, skipped, errors}` · `GET /billing/runs/` ·
-`GET /invoices/` (filters `status, customer, overdue=true, subscription`), `GET /invoices/{id}/`,
-`POST /invoices/{id}/confirm|cancel|send/`, `GET /invoices/{id}/print/`.
+## Phase 4 — Billing engine & invoices (implemented)
+Engine rules and worked example: `docs/BILLING_ENGINE.md`. Money = strings (2 dp). Errors on state changes are 409 `{"detail","code"}` with `code` = `illegal_transition` | `guard_failed`.
+
+### `POST /billing/run/` `{ "as_of"?: "YYYY-MM-DD" }` · staff, admin → 200
+Runs the engine (default `as_of` = today; a future/past date is allowed so the demo can show later billing days).
+Response: `{ run_id, as_of_date, created, skipped, errors, started_at, finished_at }`. One failing subscription is counted in `errors` and logged; it never stops the run. Running twice for the same date creates 0 new invoices.
+### `GET /billing/runs/` · `GET /billing/runs/{id}/` · staff, admin
+Paginated, newest first: `{ id, started_at, finished_at, as_of_date, triggered_by_email, created_count, skipped_count, error_count }`; detail adds `log` (per-subscription errors).
+
+### Invoices `/invoices/` · read: any role; actions: staff + admin
+Customers see **only their own, and never drafts** (other ids → 404). `GET` list (paginated) and detail; no create/update/delete over the API (the engine creates invoices).
+Filters: `status`, `customer`, `subscription`, `overdue=true` (D-013: confirmed, `amount_due > 0`, `due_date < today`); `?search=` on number, subscription number, customer email; `?ordering=` on `invoice_date, due_date, total, number, id` (default newest first).
+List/detail fields: `id, number (null until confirmed; INV-000001…), subscription, subscription_number, customer, customer_email, status (draft|confirmed|paid|cancelled), invoice_date, due_date, period_start, period_end, subtotal, discount_total (positive), tax_total, total, amount_paid, amount_due, days_overdue, is_overdue, odoo_sync_status`.
+Detail adds: `lines:[{id, kind: product|discount, description, quantity, unit_price, tax_rate (sum of the line's taxes, %), line_subtotal, line_tax, line_total}]` (discount lines are negative), `odoo_move_id, odoo_error, sent_at, created_at, actions`. `actions` = what the current user may attempt (`confirm`, `cancel`, `send`).
+`invoice_date` is the billing-run date; `due_date = invoice_date + payment-term days`; `period_start/period_end` is the service period billed.
+
+| Action | Who | Rules |
+|---|---|---|
+| `POST /invoices/{id}/confirm/` | staff, admin | draft only, ≥ 1 product line. Assigns `number`, posts to Odoo after commit, sends `INVOICE_READY` (email/WhatsApp via `notify()`, never blocks). A zero-total invoice becomes `paid` immediately |
+| `POST /invoices/{id}/cancel/` | draft: staff, admin · confirmed: **admin only**, and only if nothing was paid | The period stays used: the engine never re-bills a cancelled period (D-019). Paid/cancelled → 409 |
+| `POST /invoices/{id}/send/` `{channels?: ["email","whatsapp"]}` | staff, admin | confirmed or paid only. Forced send (manual): resends even if sent before; sets `sent_at`. Channels default to all enabled for the customer |
+| `GET /invoices/{id}/print/` | any role (scoped) | Detail plus `seller:{name}` and `customer_details:{name,email,company_name,phone,address}` for the print view |
+Each action returns the invoice detail.
+
+### Notifications skeleton (internal, full API arrives in Phase 7)
+`notify(event_code, user, obj, …)` writes a `NotificationLog` row per channel (UNIQUE `dedupe_key`) and sends after commit; failures are logged on the row and never reach the caller. Phase 4 wires `INVOICE_READY`. Spec: `docs/NOTIFICATIONS.md`.
+
+### Commands
+`python manage.py run_billing [--as-of YYYY-MM-DD]` · `python manage.py sync_odoo` (retries `pending`/`error` Odoo mirrors).
 
 ## Phase 5 — Discounts · Phase 6 — Payments (planned)
 `/discounts/` (admin write), `POST|DELETE /subscriptions/{id}/discount/`, `GET /discounts/{id}/redemptions/`.

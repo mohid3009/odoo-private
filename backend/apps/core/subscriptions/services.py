@@ -42,18 +42,23 @@ def is_staff(user):
 
 # --- numbering ---------------------------------------------------------------------------
 
-def next_number():
-    """SUB-000001, SUB-000002, ... safe under concurrency (row lock on the counter)."""
+def next_sequence(name, prefix):
+    """PREFIX000001, PREFIX000002, ... per named counter; safe under concurrency (row lock on the counter)."""
     for _ in range(3):  # the first call races to create the counter row; the loser retries
         try:
             with transaction.atomic():
-                counter, _ = Counter.objects.select_for_update().get_or_create(name="subscription")
+                counter, _ = Counter.objects.select_for_update().get_or_create(name=name)
                 counter.value += 1
                 counter.save(update_fields=["value"])
-                return f"SUB-{counter.value:06d}"
+                return f"{prefix}{counter.value:06d}"
         except IntegrityError:
             continue
-    raise RuntimeError("could not allocate a subscription number")
+    raise RuntimeError(f"could not allocate a {name} number")
+
+
+def next_number():
+    """SUB-000001, SUB-000002, ..."""
+    return next_sequence("subscription", "SUB-")
 
 
 # --- pricing (D-001) ---------------------------------------------------------------------
