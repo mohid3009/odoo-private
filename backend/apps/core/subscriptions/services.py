@@ -6,6 +6,8 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 
+from apps.finance.notifications.services import notify
+
 from .models import Counter, StatusLog, Subscription
 
 ZERO = Decimal("0.00")
@@ -142,7 +144,13 @@ def transition(sub, to, user=None, today=None):
     sub.status = to
     sub.save()
     StatusLog.objects.create(subscription=sub, from_status=frm, to_status=to, by_user=user)
-    # TODO(phase 4/7): notify(QUOTATION_READY) on quotation, notify(SUBSCRIPTION_ACTIVATED) on active.
+    if to in (S.QUOTATION, S.ACTIVE):  # the customer hears about both; notify() never raises and dedupes repeats
+        notify(
+            "QUOTATION_READY" if to == S.QUOTATION else "SUBSCRIPTION_ACTIVATED", sub.customer, sub,
+            variant=str(sub.quotation_valid_until or "") if to == S.QUOTATION else "",  # a re-issued quotation is a new message
+            context={"customer_name": sub.customer.name or sub.customer.email, "subscription_number": sub.number,
+                     "expiry_date": str(sub.expiry_date or "")},
+        )
     return sub
 
 

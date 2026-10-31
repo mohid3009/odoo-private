@@ -22,7 +22,8 @@ Enforcement is server-side: **permission classes** (what actions) + **`for_user(
 | Payments — list | ✔ all | ✔ all | own only, customer-safe fields (no notes, reasons, audit trail, recorder) |
 | See the "needs attention" flag and attempt counter | ✔ | ✔ | ✘ |
 | Dashboard | ✔ | ✔ | ✘ |
-| Notifications log / retry / toggles / test-send | ✔ | ✘ | ✘ |
+| Notifications log / retry / toggles / test-send / run reminders | ✔ | ✘ | ✘ |
+| Notification timeline of one invoice / subscription (`?object_type&object_id`) | ✔ | ✔ | ✘ |
 | Own notification settings | ✔ | ✔ | ✔ |
 | Cancel a confirmed invoice | ✔ | ✘ | ✘ |
 
