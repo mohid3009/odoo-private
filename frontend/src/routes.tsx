@@ -1,19 +1,19 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { CatalogShell, PlansPage, ProductsPage, TaxesPage, TermsPage } from "./pages/Catalog";
+import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import RoleGuard from "./components/RoleGuard";
+import { insightRoutes } from "./features/insight/routes";
+import { opsRoutes } from "./features/ops/routes";
 import ForgotPassword from "./pages/ForgotPassword";
 import Forbidden from "./pages/Forbidden";
-import Home from "./pages/Home";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import Signup from "./pages/Signup";
-import Staff from "./pages/Staff";
 
-// Route map grows per phase; see docs/FRONTEND.md.
+// Shared shell + auth pages live here and in pages/. Feature screens are added in
+// features/ops/routes.tsx and features/insight/routes.tsx, not in this file (see docs/TEAM.md).
 export default function AppRoutes() {
   return (
     <Routes>
@@ -23,16 +23,9 @@ export default function AppRoutes() {
       <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
       <Route path="/status" element={<Landing />} />
       <Route element={<RoleGuard><Layout /></RoleGuard>}>
-        <Route index element={<Home />} />
+        {insightRoutes()}
+        {opsRoutes()}
         <Route path="profile" element={<Profile />} />
-        <Route path="staff" element={<RoleGuard allow={["admin"]}><Staff /></RoleGuard>} />
-        <Route path="catalog" element={<RoleGuard allow={["admin", "staff"]}><CatalogShell /></RoleGuard>}>
-          <Route index element={<Navigate to="products" replace />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="plans" element={<PlansPage />} />
-          <Route path="taxes" element={<TaxesPage />} />
-          <Route path="terms" element={<TermsPage />} />
-        </Route>
         <Route path="403" element={<Forbidden />} />
         <Route path="*" element={<NotFound />} />
       </Route>

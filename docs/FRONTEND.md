@@ -19,6 +19,11 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `/portal`, `/portal/subscriptions`, `/portal/invoices/:id`, `/portal/settings` | customer | Self-service (read-only) | 8 |
 | `/403`, `*` | any | Forbidden / Not found | 9 |
 
+## Folder ownership
+`src/features/ops/` (catalog, staff, later subscriptions/invoices/billing/payments) and `src/features/insight/` (home, later dashboard/portal/discounts/notifications)
+each export `<name>Routes()` (keyed `<Route>` elements) and `<name>Nav` (`NavItem[]`); `src/routes.tsx` and `components/Layout.tsx` only merge them. See `docs/TEAM.md`.
+Paths in the route map below are URLs; the files live in the owning feature folder.
+
 ## Shared kit (`src/components/`) — new CRUD screens are config, not components
 | Component | Props (summary) |
 |---|---|

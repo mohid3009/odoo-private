@@ -13,7 +13,7 @@ import django  # noqa: E402
 
 django.setup()
 
-from apps.accounts.models import CustomerProfile, Role, User  # noqa: E402
+from apps.core.accounts.models import CustomerProfile, Role, User  # noqa: E402
 
 PASSWORD = "Demo@12345"
 # Created through the ORM, so emails like admin@demo skip EmailField validation (D-031).

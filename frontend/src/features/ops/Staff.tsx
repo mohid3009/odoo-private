@@ -1,9 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
-import type { User } from "../api/types";
-import DataTable, { Column } from "../components/DataTable";
-import ResourceForm from "../components/ResourceForm";
-import StatusBadge from "../components/StatusBadge";
+import { api } from "../../api/client";
+import type { User } from "../../api/types";
+import DataTable, { Column } from "../../components/DataTable";
+import ResourceForm from "../../components/ResourceForm";
+import StatusBadge from "../../components/StatusBadge";
 
 const columns: Column<User & { created_at: string }>[] = [
   { key: "email", header: "Email" },

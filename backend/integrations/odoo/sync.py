@@ -50,13 +50,13 @@ def _push_tax(tax, client):
 
 
 def sync_tax(pk):
-    from apps.catalog.models import Tax
+    from apps.core.catalog.models import Tax
 
     _mirror(Tax, pk, lambda tax, c: {"odoo_tax_id": _push_tax(tax, c)})
 
 
 def sync_product(pk):
-    from apps.catalog.models import Product
+    from apps.core.catalog.models import Product
 
     def work(product, client):
         tax_ids = []
@@ -74,7 +74,7 @@ def sync_product(pk):
 
 def sync_pending():
     """Retry everything not yet synced (used by the `sync_odoo` command in Phase 4)."""
-    from apps.catalog.models import Product, Tax
+    from apps.core.catalog.models import Product, Tax
 
     for pk in Tax.objects.filter(odoo_sync_status__in=["pending", "error"]).values_list("pk", flat=True):
         sync_tax(pk)

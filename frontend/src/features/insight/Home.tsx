@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 
 const BLURB = {
   admin: "You can manage staff accounts now. Catalog, discounts, billing and the finance dashboard arrive in the next phases.",

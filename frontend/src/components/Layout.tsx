@@ -2,12 +2,14 @@ import { ReactNode } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import type { Role } from "../api/types";
+import { insightNav } from "../features/insight/routes";
+import { opsNav } from "../features/ops/routes";
+import type { NavItem } from "./nav";
 
-// Nav grows per phase; a role only sees what it may open.
-const NAV: { to: string; label: string; roles: Role[]; end?: boolean }[] = [
-  { to: "/", label: "Home", roles: ["admin", "staff", "customer"], end: true },
-  { to: "/catalog", label: "Catalog", roles: ["admin", "staff"] },
-  { to: "/staff", label: "Staff", roles: ["admin"] },
+// Each feature folder owns its nav entries; a role only sees what it may open.
+const NAV: NavItem[] = [
+  ...insightNav,
+  ...opsNav,
   { to: "/profile", label: "Profile", roles: ["admin", "staff", "customer"] },
 ];
 

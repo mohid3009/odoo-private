@@ -3,8 +3,8 @@ from decimal import Decimal
 import pytest
 from rest_framework.test import APIClient
 
-from apps.accounts.models import Role, User
-from apps.catalog.models import PaymentTerm, Plan, Product, Tax, Variant
+from apps.core.accounts.models import Role, User
+from apps.core.catalog.models import PaymentTerm, Plan, Product, Tax, Variant
 from integrations.odoo import sync
 from integrations.odoo.client import OdooUnavailable, OdooValidationError
 

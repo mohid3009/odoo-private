@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
-import CrudPage, { CrudConfig } from "../components/CrudPage";
-import MoneyText from "../components/MoneyText";
-import StatusBadge from "../components/StatusBadge";
+import CrudPage, { CrudConfig } from "../../components/CrudPage";
+import MoneyText from "../../components/MoneyText";
+import StatusBadge from "../../components/StatusBadge";
 
 const yesNo = (b: boolean) => (b ? "Yes" : "—");
 const active = { key: "is_active", header: "Active", render: (r: any) => yesNo(r.is_active) };

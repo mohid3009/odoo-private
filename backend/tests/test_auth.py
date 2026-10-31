@@ -8,7 +8,7 @@ from django.core import mail
 from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 
-from apps.accounts.models import CustomerProfile, Role
+from apps.core.accounts.models import CustomerProfile, Role
 
 User = get_user_model()
 GOOD = "Strong@Pass1"

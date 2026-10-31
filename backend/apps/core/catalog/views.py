@@ -3,7 +3,7 @@ from django.db.models import ProtectedError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from apps.accounts.permissions import ReadOnlyOrAdmin
+from apps.core.accounts.permissions import ReadOnlyOrAdmin
 from integrations.odoo import sync
 
 from .models import PaymentTerm, Plan, Product, Tax
