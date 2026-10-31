@@ -1,4 +1,8 @@
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Outlet, Route } from "react-router-dom";
+import Billing from "./Billing";
+import InvoiceDetail from "./InvoiceDetail";
+import { InvoiceList } from "./Invoices";
+import InvoicePrint from "./InvoicePrint";
 import type { NavItem } from "../../components/nav";
 import RoleGuard from "../../components/RoleGuard";
 import { CatalogShell, PlansPage, ProductsPage, TaxesPage, TermsPage } from "./Catalog";
@@ -10,6 +14,8 @@ import { TemplatesPage } from "./Templates";
 // OPS (people C): catalog, staff, subscriptions + templates, and later invoices, billing run, payments.
 export const opsNav: NavItem[] = [
   { to: "/subscriptions", label: "Subscriptions", roles: ["admin", "staff"] },
+  { to: "/invoices", label: "Invoices", roles: ["admin", "staff"] },
+  { to: "/billing", label: "Billing", roles: ["admin", "staff"] },
   { to: "/catalog", label: "Catalog", roles: ["admin", "staff"] },
   { to: "/staff", label: "Staff", roles: ["admin"] },
 ];
@@ -22,6 +28,13 @@ export const opsRoutes = () => [
     <Route path="templates" element={<TemplatesPage />} />
     <Route path=":id" element={<SubscriptionDetail />} />
   </Route>,
+  <Route key="invoices" path="invoices" element={<RoleGuard allow={["admin", "staff"]}><Outlet /></RoleGuard>}>
+    <Route index element={<InvoiceList />} />
+    <Route path=":id" element={<InvoiceDetail />} />
+  </Route>,
+  // print is open to every role: the API only returns the caller's own invoices (customers never see drafts)
+  <Route key="invoice-print" path="invoices/:id/print" element={<RoleGuard allow={["admin", "staff", "customer"]}><InvoicePrint /></RoleGuard>} />,
+  <Route key="billing" path="billing" element={<RoleGuard allow={["admin", "staff"]}><Billing /></RoleGuard>} />,
   <Route key="catalog" path="catalog" element={<RoleGuard allow={["admin", "staff"]}><CatalogShell /></RoleGuard>}>
     <Route index element={<Navigate to="products" replace />} />
     <Route path="products" element={<ProductsPage />} />

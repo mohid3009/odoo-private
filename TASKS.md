@@ -39,13 +39,15 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - [ ] Concurrent numbering test is written but **skipped on sqlite** — run `pytest tests/test_subscriptions.py` against Postgres (needs Docker, see Cut)
 
 ## Phase 4 — Billing engine and invoices (2:45–3:50) [S4]
-- [ ] `apps/billing/engine.py`, `run_billing`, `POST /billing/run/`, BillingRun list
-- [ ] Invoice API: list/detail/confirm/cancel/send/print data
-- [ ] Odoo draft after commit, `action_post` on confirm, `sync_odoo`
-- [ ] Notification skeleton (`notify()`, email+console, dedupe, on_commit)
-- [ ] React invoices list/detail/print, Run billing page
-- [ ] Mandatory tests 1–8 (KICKOFF §8 Phase 4)
-- [ ] Acceptance: 20 due subs → 20 drafts; rerun → 0; one confirmed invoice visible in Odoo
+- [x] `apps/core/billing/engine.py` (pure `price_lines` + atomic `bill_subscription` + `run_billing`), `run_billing` command, `POST /billing/run/`, BillingRun list/detail
+- [x] Invoice API: list/detail (filters status/customer/subscription/overdue, search, ordering), confirm / cancel / send / print data; `INV-000001` numbering; customers see only their own non-draft invoices
+- [x] Odoo (mocked): draft `account.move` after commit, `action_post` on confirm with total comparison, partner/tax push, `sync_odoo` retry — **mappers unverified, no live Odoo yet**
+- [x] Notification skeleton (`apps/finance/notifications`): `notify()`, email + WhatsApp-console channels, dedupe key, on_commit dispatch, failure isolation; `INVOICE_READY` wired to confirm and send
+- [x] React (`features/ops`): invoices list with Draft/Confirmed/Paid/Overdue/Cancelled chips and days-overdue highlight, detail with Confirm / Send / Cancel / Print and Odoo status, print view (print CSS), Run billing page with result card and history
+- [x] Mandatory tests 1–8 plus period maths, discount hook, cursor repair, cap of 12, expiry and auto-close, state/permission matrix, overdue, notification dedupe and retry (215 pass, 2 skipped)
+- [x] Acceptance, in the browser: 20 active subscriptions → **20 draft invoices, every total verified to the paisa; rerun → 0 created, 0 errors**; one invoice confirmed → INV-000001 + email; staff Send, print view, customer sees only their own invoice
+- [ ] "One confirmed invoice visible in Odoo" — blocked on Docker (see Cut)
+- [ ] 2 Postgres-only concurrency tests (`test_concurrent_runs_create_no_duplicates`, concurrent numbering) skipped on sqlite — run against Postgres
 
 ## Phase 5 — Discounts (3:50–4:10) [S5]
 - [ ] Discount CRUD (admin), attach/detach, redemptions list
@@ -81,6 +83,8 @@ Tick as acceptance checks pass. Cut-line order: KICKOFF §9.
 - **Odoo local bring-up (Phase 0)** — Docker Desktop's engine did not come up on the dev laptop (error dialog on startup; needs someone to look at its window). Running with `ODOO_ENABLED=false`. Files ready: `docker-compose.yml`, `odoo/config/odoo.conf`, `Makefile odoo-init`, `backend/scripts/odoo_smoke.py`. Retry on a Docker-capable machine / in Phase 4.
 
 ## Bugs
+- Fixed in Phase 4 (found by driving the UI): Django's stock console email backend raises on a Windows cp1252 console when the body contains `₹`, so every invoice email in dev logged `failed` (the confirm still succeeded, as designed). Replaced by `ConsoleEmailBackend` (D-039); the failed row was retried and went out.
+- Phase 4 known gaps: on a customer's print page the "← Back" link goes to the staff-only invoice page (403) until the portal exists in Phase 8; `Payment` side of an invoice (`amount_paid`, Paid status) is Phase 6; Odoo cancel mirror is cut; reminders / `run_notifications` after a run are Phase 7.
 - Fixed in Phase 3 (found by driving the UI): after a server error on a `lines` field (e.g. the plan's minimum quantity), react-hook-form kept the manually-set error and silently blocked every resubmit. `ResourceForm` and `SubscriptionForm` now `clearErrors()` before each submit. Same pass: `CrudPage` hardcoded admin-only writes, so staff could not manage templates; it now takes `writeRoles`.
 - Fixed in Phase 1: `AuthProvider` used `queryClient.clear()` on login, which detached the `["me"]` query and bounced users back to `/login`. Now drops every cache key except `me`.
 - Phase 1 notes: staff and customer navs differ only by the Home label until later-phase pages exist; password-reset email still sent directly, moves behind `notify()` in Phase 4; `WELCOME` notification not wired yet (Phase 7).
