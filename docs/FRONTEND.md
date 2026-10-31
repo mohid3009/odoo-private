@@ -9,7 +9,7 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `*` (temporary) | any | Landing (health status) | 0 |
 | `/login`, `/signup`, `/forgot-password`, `/reset-password/:uid/:token` | anon | Auth pages | 1 |
 | `/staff` | admin | Staff management | 1 |
-| `/catalog/products`, `/catalog/taxes`, `/catalog/terms`, `/catalog/plans` | staff+admin | Config-driven CRUD | 2 |
+| `/catalog` → `/catalog/products`, `/catalog/plans`, `/catalog/taxes`, `/catalog/terms` | staff (read-only) + admin | Config-driven CRUD via `CrudPage` + config in `pages/Catalog.tsx` | 2 |
 | `/templates`, `/subscriptions`, `/subscriptions/new`, `/subscriptions/:id` | staff+admin | Lists/forms/detail | 3 |
 | `/invoices`, `/invoices/:id`, `/invoices/:id/print`, `/billing` | staff+admin | Invoices, print view, Run billing | 4 |
 | `/discounts` | admin | Discounts | 5 |
@@ -18,6 +18,11 @@ Prod: `npm run build` → `dist/` served by Django (D-005).
 | `/dashboard` | staff+admin | KPIs, summaries, overdue | 8 |
 | `/portal`, `/portal/subscriptions`, `/portal/invoices/:id`, `/portal/settings` | customer | Self-service (read-only) | 8 |
 | `/403`, `*` | any | Forbidden / Not found | 9 |
+
+## Folder ownership
+`src/features/ops/` (catalog, staff, later subscriptions/invoices/billing/payments) and `src/features/insight/` (home, later dashboard/portal/discounts/notifications)
+each export `<name>Routes()` (keyed `<Route>` elements) and `<name>Nav` (`NavItem[]`); `src/routes.tsx` and `components/Layout.tsx` only merge them. See `docs/TEAM.md`.
+Paths in the route map below are URLs; the files live in the owning feature folder.
 
 ## Shared kit (`src/components/`) — new CRUD screens are config, not components
 | Component | Props (summary) |
