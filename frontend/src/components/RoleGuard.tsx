@@ -8,7 +8,8 @@ export default function RoleGuard({ allow, children, fallback }: { allow?: Role[
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <p className="p-8 text-slate-500">Loading…</p>;
-  if (!user) return fallback !== undefined ? <>{fallback}</> : <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  // a logged-out visitor on the bare site URL gets the landing page; deep links still go to the login form
+  if (!user) return fallback !== undefined ? <>{fallback}</> : <Navigate to={location.pathname === "/" ? "/welcome" : "/login"} replace state={{ from: location.pathname }} />;
   if (allow && !allow.includes(user.role)) return fallback !== undefined ? <>{fallback}</> : <Navigate to="/403" replace />;
   return <>{children}</>;
 }

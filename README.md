@@ -71,7 +71,7 @@ Brightloop runs the whole life of a subscription business in one place:
                                       Email / WhatsApp (Twilio or Meta) for notifications
 ```
 
-One container serves the API and the built SPA, so there is a single origin and a single URL to deploy.
+The browser always sees one origin: locally the Vite proxy (or one Docker container), in production a Vercel rewrite to the API.
 
 ## Quick start
 
@@ -99,7 +99,7 @@ Local password login stays on in development (`LOCAL_PASSWORD_AUTH=true`) so the
 
 ## Deploy
 
-Render (Docker) + Neon (Postgres) + Firebase (auth), configured by [`render.yaml`](render.yaml). Step by step: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
+Vercel (React app, [`frontend/vercel.json`](frontend/vercel.json)) + Render (Django API, [`render.yaml`](render.yaml)) + Neon (Postgres) + Firebase (auth). Vercel proxies `/api` to Render, so the browser sees one origin. Step by step: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
 ## Everyday commands
 

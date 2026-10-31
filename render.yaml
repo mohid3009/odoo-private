@@ -1,9 +1,11 @@
-# Render Blueprint: one Docker web service (API + built React app). Database is Neon (DATABASE_URL), auth is Firebase.
-# Secrets marked `sync: false` are asked for once in the Render dashboard on first deploy.
+# Render Blueprint: backend only (Django API in Docker). The React app lives on Vercel and proxies /api here (docs/DEPLOY.md).
+# Database is Neon (DATABASE_URL), auth is Firebase. `sync: false` secrets are asked for once in the Render dashboard.
 services:
   - type: web
     name: brightloop
     runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: starter
     healthCheckPath: /api/healthz
     envVars:
@@ -13,13 +15,10 @@ services:
       - { key: DJANGO_SECRET_KEY, generateValue: true }
       - { key: DATABASE_URL, sync: false }          # Neon connection string (direct, not pooled), ends with ?sslmode=require
       - { key: FIREBASE_PROJECT_ID, sync: false }
+      - { key: SITE_URL, sync: false }              # your Vercel URL, e.g. https://brightloop.vercel.app
+      - { key: CSRF_TRUSTED_ORIGINS, sync: false }  # same Vercel URL (comma-separate extra domains)
       - { key: STAFF_SIGNUP_CODE, sync: false }
       - { key: ADMIN_SIGNUP_CODE, sync: false }
-      # public web config of the Firebase app, baked into the React build
-      - { key: VITE_FIREBASE_API_KEY, sync: false }
-      - { key: VITE_FIREBASE_AUTH_DOMAIN, sync: false }
-      - { key: VITE_FIREBASE_PROJECT_ID, sync: false }
-      - { key: VITE_FIREBASE_APP_ID, sync: false }
       # optional: real email (leave EMAIL_HOST empty to keep the console backend)
       - { key: EMAIL_BACKEND, value: "django.core.mail.backends.smtp.EmailBackend" }
       - { key: EMAIL_HOST, sync: false }
