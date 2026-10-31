@@ -13,8 +13,35 @@ Frontend: no unit tests (rule 12) — manual checklist below, run in Phase 9.
 | 4 | **(1)** run twice → no new invoices · **(2)** concurrent runs → no duplicates · **(3)** catch-up creates each missed period · **(4)** nothing beyond expiry; auto-close only with flag · **(5)** paused/draft/closed skipped · **(6)** worked example = 8283.60 · **(7)** one failing sub doesn't stop the run · **(8)** Odoo down → local invoice `pending` |
 | 5 | percent/fixed · min qty / min purchase unmet · before start / after end · limit 2 with 3 eligible → exactly 2 · scope product vs subscription · race-safe counter · staff create 403 |
 | 6 | partial then full → Paid exactly at the sum · overpayment rejected · draft/cancelled rejected · overdue rule (D-013) · denormalized totals equal recomputation |
-| 7 | The 8 tests in `NOTIFICATIONS.md` §9 |
+| 7 | The 8 tests in `NOTIFICATIONS.md` §9 (`tests/test_notifications.py`, `tests/test_notifications_phase7.py`) · Twilio request shape and error mapping (HTTP mocked) · retry sweep · log / events / test-send / reminders permissions · timeline scope for staff |
 | 8 | Customer A → B's subscription/invoice/payment → 404 · dashboard numbers equal hand-computed fixture |
+=======
+| 8 | `tests/test_portal_isolation.py`: customer A → B's subscription / invoice / print / invoice payments / payment → 404 (same as a missing id), lists and filters leak nothing, customer actions 403 before any lookup · `tests/test_dashboard.py`: KPIs, by-plan, by-month and overdue order equal a hand-computed fixture; customer / plan / status / date filters; failed, reversed, draft and cancelled rows never count; bad filters 400; customer and anonymous 403; query count independent of row count |
+
+## Run the suite on PostgreSQL (required before a release; D-042)
+sqlite silently ignores `FOR UPDATE`, so it can neither verify concurrency nor catch Postgres-only errors (a nullable-join lock bug hid behind it from Phase 3 to Phase 6).
+```
+cd backend
+DATABASE_URL=postgres://<user>@localhost:5432/<anydb> python -m pytest -q      # pytest-django creates and drops test_<anydb>
+```
+Expected: 0 skipped. With sqlite the PostgreSQL-only tests (billing runs, subscription numbering, payment races) show as **skipped**, never as passed. Phase 6 added a mutation check: temporarily remove `select_for_update` from `payments/services.py::_lock_invoice` and the lock-dependent concurrency tests must fail.
+>>>>>>> other-repo/phase-8b
+
+## Run the suite on PostgreSQL (required before a release; D-042)
+sqlite silently ignores `FOR UPDATE`, so it can neither verify concurrency nor catch Postgres-only errors (a nullable-join lock bug hid behind it from Phase 3 to Phase 6).
+```
+cd backend
+DATABASE_URL=postgres://<user>@localhost:5432/<anydb> python -m pytest -q      # pytest-django creates and drops test_<anydb>
+```
+Expected: 0 skipped. With sqlite the PostgreSQL-only tests (billing runs, subscription numbering, payment races) show as **skipped**, never as passed. Phase 6 added a mutation check: temporarily remove `select_for_update` from `payments/services.py::_lock_invoice` and the lock-dependent concurrency tests must fail.
+
+## Run the suite on PostgreSQL (required before a release; D-042)
+sqlite silently ignores `FOR UPDATE`, so it can neither verify concurrency nor catch Postgres-only errors (a nullable-join lock bug hid behind it from Phase 3 to Phase 6).
+```
+cd backend
+DATABASE_URL=postgres://<user>@localhost:5432/<anydb> python -m pytest -q      # pytest-django creates and drops test_<anydb>
+```
+Expected: 0 skipped. With sqlite the PostgreSQL-only tests (billing runs, subscription numbering, payment races) show as **skipped**, never as passed. Phase 6 added a mutation check: temporarily remove `select_for_update` from `payments/services.py::_lock_invoice` and the lock-dependent concurrency tests must fail.
 
 ## Performance method (Phase 8)
 `python scripts/seed_demo.py --big` → ~5k subs, ~15k invoices, ~10k payments (`bulk_create`).

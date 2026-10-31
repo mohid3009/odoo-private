@@ -5,10 +5,10 @@ Use `WHATSAPP_PROVIDER=twilio` with the demo phone joined to the sandbox, or `co
 _Data below is the intended seed; adjust if `seed_demo.py` differs and update this file._
 
 ## S1 — Sign-up & roles (3 min)
-1. `/signup`: email `new@demo`, password `weakpass` → rejected (needs upper, lower, special, > 8). Use `Strong@Pass1` → created as customer; WhatsApp opt-in ticked.
-2. Sign up again with `NEW@demo` → "email already registered" (case-insensitive).
+1. `/signup`: email `new@demo.com`, password `weakpass` → rejected (needs upper, lower, special, > 8). Use `Strong@Pass1` → created as customer; WhatsApp opt-in ticked.
+2. Sign up again with `NEW@demo.com` → "An account with this email already exists." (case-insensitive).
 3. Forgot password → open console/email → link → set `Another@Pass2` → log in.
-4. Log in as admin → **Staff** page → create `ops@demo` (staff). Log in as staff → no Staff menu; `/staff` → 403 page.
+4. Log in as admin → **Staff** page → create `ops@demo.com` (staff). Log in as staff → no Staff menu; `/staff` → 403 page.
 5. Customer sees only "My subscriptions / My invoices". **Expected:** different nav per role.
 
 ## S2 — New plan (3 min, admin)

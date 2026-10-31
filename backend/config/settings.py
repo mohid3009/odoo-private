@@ -18,9 +18,22 @@ def env_list(key, default=""):
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
 DEBUG = env_bool("DEBUG", True)
+if not DEBUG and SECRET_KEY == "dev-insecure-key-change-me":
+    raise RuntimeError("Set DJANGO_SECRET_KEY when DEBUG=false.")
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
-SITE_URL = os.environ.get("SITE_URL", "http://localhost:5173").rstrip("/")
+# Render injects its public hostname/URL; trust it without extra config.
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+    CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}")
+SITE_URL = (os.environ.get("SITE_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:5173").rstrip("/")
+
+# --- auth: Firebase (Google + email/password) exchanges an ID token for the Django session ---
+FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
+# Dev / tests / seeded demo users keep password login; production sets this false so Firebase is the only way in.
+LOCAL_PASSWORD_AUTH = env_bool("LOCAL_PASSWORD_AUTH", True)
+# signInWithPopup (Google) needs window.opener; Django's default "same-origin" would break it.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -31,14 +44,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "django_filters",
-    "apps.accounts",
-    "apps.catalog",
-    "apps.subscriptions",
-    "apps.billing",
-    "apps.discounts",
-    "apps.payments",
-    "apps.notifications",
-    "apps.dashboard",
+    "apps.core.accounts",
+    "apps.core.catalog",
+    "apps.core.subscriptions",
+    "apps.core.billing",
+    "apps.finance.discounts",
+    "apps.finance.payments",
+    "apps.finance.notifications",
+    "apps.finance.dashboard",
 ]
 
 MIDDLEWARE = [
@@ -73,11 +86,13 @@ TEMPLATES = [
 # (select_for_update(skip_locked) and the billing concurrency tests need Postgres).
 DATABASES = {
     "default": dj_database_url.parse(
-        os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=60
+        os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=60, conn_health_checks=True
     )
 }
 
 AUTH_USER_MODEL = "accounts.User"
+AUTH_PASSWORD_VALIDATORS = [{"NAME": "apps.core.accounts.validators.PasswordRuleValidator"}]  # D-006
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # reset links live 24 h; single-use because the hash changes
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
@@ -104,8 +119,7 @@ if not DEBUG:
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 25,
+    "DEFAULT_PAGINATION_CLASS": "config.pagination.StandardPagination",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
@@ -115,7 +129,7 @@ REST_FRAMEWORK = {
 }
 
 # --- email (D-007) ---
-EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND") or "apps.finance.notifications.email_backend.ConsoleEmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
@@ -129,6 +143,13 @@ ODOO_URL = os.environ.get("ODOO_URL", "http://localhost:8069").rstrip("/")
 ODOO_DB = os.environ.get("ODOO_DB", "odoo_sub")
 ODOO_USER = os.environ.get("ODOO_USER", "admin")
 ODOO_PASSWORD = os.environ.get("ODOO_PASSWORD") or os.environ.get("ODOO_API_KEY", "")
+
+# --- payments (D-041): failed attempts allowed per invoice before it is flagged and further attempts are refused ---
+PAYMENT_MAX_ATTEMPTS = int(os.environ.get("PAYMENT_MAX_ATTEMPTS", "3"))
+
+# --- staff/admin self-registration (D-044): empty = disabled ---
+STAFF_SIGNUP_CODE = os.environ.get("STAFF_SIGNUP_CODE", "")
+ADMIN_SIGNUP_CODE = os.environ.get("ADMIN_SIGNUP_CODE", "")
 
 # --- notifications (D-020..D-025) ---
 WHATSAPP_PROVIDER = os.environ.get("WHATSAPP_PROVIDER", "console")

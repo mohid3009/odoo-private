@@ -3,7 +3,7 @@
 **Pinned version:** Odoo Community **18.0** (`odoo:18.0` image, D-003). Mirror role only (D-004): Django is the source of truth.
 **Status:** wrapper + compose + config written in Phase 0. Field names below are the *intended* mapping from Odoo 18 and
 **must be confirmed with `fields_get` on the running instance** (rule 6) — the "Verified" column is filled in at the Phase 0 gate / Phase 4.
-(Docker's engine did not start on the first dev laptop — D-030 — so nothing here is verified against a live instance yet.)
+(Docker never started on the first dev laptop — D-030. Partner, tax, invoice and confirm are now verified live against a native Odoo 18, see “Live verification” below.)
 
 ## Auth
 XML-RPC. `common.authenticate(db, user, password, {})` → `uid`; then `object.execute_kw(db, uid, password, model, method, args, kwargs)`.
@@ -23,11 +23,11 @@ docker compose exec web python scripts/odoo_smoke.py         # auth + search_rea
 ## Mapping
 | Local | Odoo model | Key fields (intended) | Verified |
 |---|---|---|---|
-| CustomerProfile | `res.partner` | `name`, `email`, `phone`, `street`, `company_type`; search by `email` before create → store `odoo_partner_id` | ☐ |
+| CustomerProfile | `res.partner` | `name`, `email`, `phone`, `street`, `company_type`; search by `email` before create → store `odoo_partner_id` | ✔ 2026-10-31 |
 | Product | `product.product` | `name`, `list_price`←sales_price, `standard_price`←cost_price, `type`, `taxes_id`; variants stay local (text + price on the line) | ☐ |
-| Tax | `account.tax` | `name`, `amount`, `amount_type='percent'`, `type_tax_use='sale'`; match by name+rate (l10n_in GST) else create | ☐ |
-| Invoice | `account.move` | `move_type='out_invoice'`, `partner_id`, `invoice_date`, `invoice_date_due`, `ref`, `invoice_line_ids=[(0,0,{name,quantity,price_unit,tax_ids})]`; discount lines are negative `price_unit` | ☐ |
-| Confirm | `account.move.action_post` | local Confirm → post; store `odoo_move_id`, Odoo `amount_total` | ☐ |
+| Tax | `account.tax` | `name`, `amount`, `amount_type='percent'`, `type_tax_use='sale'`; match by name+rate (l10n_in GST) else create | ✔ 2026-10-31 |
+| Invoice | `account.move` | `move_type='out_invoice'`, `partner_id`, `invoice_date`, `invoice_date_due`, `ref`, `invoice_line_ids=[(0,0,{name,quantity,price_unit,tax_ids})]`; discount lines are negative `price_unit` | ✔ 2026-10-31 |
+| Confirm | `account.move.action_post` | local Confirm → post; store `odoo_move_id`, Odoo `amount_total` | ✔ 2026-10-31 |
 | Cancel *(stretch)* | `button_draft` → `button_cancel` | only if posted | ☐ |
 | Payment *(stretch)* | `account.payment.register` wizard | `context={'active_model':'account.move','active_ids':[id]}` → create wizard with `amount`, `payment_date`, `journal_id` → `action_create_payments` | ☐ |
 
@@ -47,3 +47,13 @@ Sync always runs in `transaction.on_commit` and swallows exceptions into the sta
 - Odoo may recompute taxes/rounding differently (fiscal positions, tax-included prices) — compare totals, don't assume.
 - Odoo's own invoice numbering (`INV/2026/00001`) differs from ours; we store it on the Odoo side only and show ours.
 - A model/field rename between Odoo versions breaks mappers silently: re-run `fields_get` when the image tag changes.
+
+## Live verification (2026-10-31, native Odoo 18.0.20261031 on Windows, no Docker)
+Setup that worked (also the manual route if Docker is unavailable):
+1. The Odoo Windows service connects to Postgres as the role in `odoo.conf` (`db_user`); that role must exist (`CREATE ROLE <db_user> LOGIN CREATEDB PASSWORD '<db_password from odoo.conf>'`).
+2. Create the database through the API: `db.create_database(master_pwd, "odoo_brightloop", False, "en_US", "admin", "admin", "in", False)` (country `in` gives INR and the Indian chart). Then install `contacts`, `account`, `sale_management` (`l10n_in` comes with `account`): 38 sales taxes and the `INV` sales journal appear.
+3. `python scripts/odoo_bootstrap.py` (now also fills the company address; Odoo will not post an invoice without street, city, zip **and state**: found by the first live run, the fake Odoo could not show it).
+4. Env: `ODOO_ENABLED=true`, `ODOO_URL=http://localhost:8069`, `ODOO_DB=odoo_brightloop`, `ODOO_USER=admin`, `ODOO_PASSWORD=admin`.
+
+Result of `seed_demo.py` with Odoo on, then `manage.py sync_odoo`: 4 partners, 1 tax, **10 invoices in Odoo (8 posted, 2 draft), every `amount_total` equal to the local total to 0.01** (discount line and 18 % GST included), currency INR, Odoo numbers `INV/26-27/000n`. `scripts/odoo_smoke.py` passes.
+Not verified: product mirror (the seed creates products through the ORM, so the product hook never ran), payment mirror (cut, `skipped`), cancel mirror (cut), behaviour when Odoo goes down mid-run against a real instance (only the fake covers it).

@@ -40,7 +40,9 @@ Money = `DecimalField(max_digits=12, decimal_places=2)`. Timestamps are timezone
 |---|---|---|
 | **Discount** | name, code, type (`fixed/percent`), value, scope (`product/subscription`), M2M products, min_purchase_amount, min_quantity, start_date, end_date, usage_limit null, used_count, is_active, created_by | percent 0–100, fixed > 0, start ≤ end |
 | **DiscountRedemption** | discount, invoice, amount | UNIQUE(discount, invoice) |
-| **Payment** | invoice, amount, method (`cash/bank_transfer/upi/card/cheque/other`), payment_date, note, recorded_by, odoo_payment_id, odoo_sync_status, created_at | amount > 0; idx(invoice), idx(payment_date) |
+| **Payment** *(one row per attempt)* | invoice FK (PROTECT), amount, method (`cash/bank_transfer/upi/card/cheque/other`), payment_date, note, **status** (`completed/failed/reversed`), **attempt_number** (≥ 1), **retry_of** (nullable self-FK, SET_NULL), failure_reason, recorded_by, created_at, reversed_at, reversed_by, reversal_reason, odoo_payment_id, odoo_sync_status | amount > 0; attempt_number ≥ 1; **UNIQUE(retry_of)** where not null (a failed attempt is retried at most once); idx(invoice, status), idx(payment_date); only `completed` rows count toward `Invoice.amount_paid` |
+| **PaymentEvent** *(append-only audit)* | invoice FK, payment FK (null), kind (`recorded/failed/retried/reversed/attention_flagged/attention_reset`), by_user, at, detail | idx(invoice, at); never updated or deleted |
+| **Invoice** *(new fields, Phase 6)* | `failed_attempts` (failed attempts since the last completed payment or admin reset), `payment_needs_attention` (= `failed_attempts >= PAYMENT_MAX_ATTEMPTS`) | idx(payment_needs_attention) |
 | **NotificationEvent** | code, label, enabled_email, enabled_whatsapp, template_body, meta_template_name | unique(code) |
 | **NotificationLog** | event, channel, provider, recipient_user, recipient_address, object_type, object_id, body, status (`queued/sent/delivered/read/failed/skipped`), skip_reason, provider_message_id, error, attempts, next_attempt_at, dedupe_key, created_at, sent_at | **UNIQUE(dedupe_key)** |
 

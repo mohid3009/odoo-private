@@ -1,6 +1,6 @@
 # RBAC
 
-Roles: `admin`, `staff`, `customer` (`User.role`). Public signup → `customer` only. Only an admin creates staff (and other admins).
+Roles: `admin`, `staff`, `customer` (`User.role`). Public signup → `customer` unless the visitor presents the server's staff/admin signup code (D-044; both codes are empty = disabled by default). An admin can always create staff and other admins from the Staff page.
 Enforcement is server-side: **permission classes** (what actions) + **`for_user()` querysets** (which rows). React hiding is cosmetic.
 
 ## Capability matrix
@@ -17,10 +17,13 @@ Enforcement is server-side: **permission classes** (what actions) + **`for_user(
 | Run billing | ✔ | ✔ | ✘ |
 | Invoices — list/confirm/cancel/send | ✔ all | ✔ all | ✘ |
 | Invoices — view / print own | ✔ | ✔ | ✔ |
-| Record payments | ✔ | ✔ | ✘ |
-| Payments — list | ✔ all | ✔ all | own only |
+| Record a payment attempt / retry a failed one | ✔ | ✔ | ✘ |
+| Reverse a completed payment, reset the attempt limit | ✔ | ✘ | ✘ |
+| Payments — list | ✔ all | ✔ all | own only, customer-safe fields (no notes, reasons, audit trail, recorder) |
+| See the "needs attention" flag and attempt counter | ✔ | ✔ | ✘ |
 | Dashboard | ✔ | ✔ | ✘ |
-| Notifications log / retry / toggles / test-send | ✔ | ✘ | ✘ |
+| Notifications log / retry / toggles / test-send / run reminders | ✔ | ✘ | ✘ |
+| Notification timeline of one invoice / subscription (`?object_type&object_id`) | ✔ | ✔ | ✘ |
 | Own notification settings | ✔ | ✔ | ✔ |
 | Cancel a confirmed invoice | ✔ | ✘ | ✘ |
 
@@ -44,7 +47,7 @@ Views declare `permission_classes` explicitly; the project default is `IsAuthent
 
 ## Protected screens (React `RoleGuard`)
 `/staff` admin · `/catalog/*` staff+admin (edit controls admin) · `/discounts` admin · `/dashboard`, `/billing`, `/payments` staff+admin ·
-`/notifications` admin · `/portal/*` customer. Mismatch → redirect to the role's home or the 403 page.
+`/notifications` admin · `/my-*` customer (`/invoices/:id/print` every role; the API scopes it). Mismatch → redirect to the role's home or the 403 page.
 
 ## Tests (Phase 1 / 8)
 Role × endpoint matrix test; staff cannot create staff (403); customer A → customer B's subscription/invoice/payment ids → 404; customer → catalog write → 403.

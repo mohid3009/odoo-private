@@ -31,6 +31,15 @@ if mod["state"] != "installed":
     c.execute("ir.module.module", "button_immediate_install", [mod["id"]])
 print("l10n_in:", c.search_read("ir.module.module", [("name", "=", "l10n_in")], ["state"], limit=1)[0]["state"])
 
+# Odoo refuses to post an invoice (account.move.action_post) until the company has a full address incl. a state (l10n_in).
+# Found by the first live run, not by the fake Odoo. Only fills blanks, so a real address already set is never overwritten.
+co = c.search_read("res.company", [("id", "=", company["id"])], ["street", "city", "zip", "state_id"], limit=1)[0]
+state = c.search_read("res.country.state", [("country_id", "=", india), ("code", "=", "KL")], ["id"], limit=1)
+blank = {k: v for k, v in {"street": "Demo Street 1", "city": "Kochi", "zip": "682001", "state_id": state[0]["id"] if state else False}.items() if not co[k]}
+if blank:
+    c.write("res.company", [company["id"]], blank)
+print("company address filled:", sorted(blank) or "already complete")
+
 journals = c.search_read("account.journal", [("type", "=", "sale")], ["name", "code"])
 print("sales journals:", journals)
 if not journals:
