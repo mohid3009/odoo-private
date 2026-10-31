@@ -8,7 +8,7 @@ export default function ConfirmButton({ label, confirmText = "Are you sure?", on
   return (
     <span className="inline-flex items-center gap-2 text-sm">
       {confirmText}
-      <button className={`${base} bg-red-600 text-white`} onClick={async () => { await onConfirm(); setArmed(false); }}>Yes</button>
+      <button className={`${base} bg-red-600 text-white`} onClick={async () => { try { await onConfirm(); } finally { setArmed(false); } }}>Yes</button>
       <button className={base} onClick={() => setArmed(false)}>No</button>
     </span>
   );
