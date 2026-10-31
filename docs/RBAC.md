@@ -47,7 +47,7 @@ Views declare `permission_classes` explicitly; the project default is `IsAuthent
 
 ## Protected screens (React `RoleGuard`)
 `/staff` admin · `/catalog/*` staff+admin (edit controls admin) · `/discounts` admin · `/dashboard`, `/billing`, `/payments` staff+admin ·
-`/notifications` admin · `/portal/*` customer. Mismatch → redirect to the role's home or the 403 page.
+`/notifications` admin · `/my-*` customer (`/invoices/:id/print` every role; the API scopes it). Mismatch → redirect to the role's home or the 403 page.
 
 ## Tests (Phase 1 / 8)
 Role × endpoint matrix test; staff cannot create staff (403); customer A → customer B's subscription/invoice/payment ids → 404; customer → catalog write → 403.
