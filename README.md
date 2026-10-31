@@ -117,7 +117,7 @@ Vercel (React app, [`frontend/vercel.json`](frontend/vercel.json)) + Render (Dja
 - **Tested:** 375 backend tests pass (8 Postgres-only concurrency tests skip on SQLite). Frontend type-checks and builds clean.
 - **Odoo:** verified against a native Windows Odoo 18 with Odoo on: 10 invoices mirrored, every `amount_total` equal to the local total to 0.01 (see [docs/ODOO_INTEGRATION.md](docs/ODOO_INTEGRATION.md)). Not exercised in the Docker route yet.
 - **Not yet verified:** the Firebase / Neon / Render deployment path (written and documented, needs your accounts to run end to end), the WhatsApp provider against a live number, and a `--big` run of the perf gate.
-- **Known limits:** single currency (INR), payments are recorded manually (no payment gateway), no proration, no scheduled jobs in `render.yaml` yet (run billing from the UI or add cron jobs), Google sign-in creates customers only.
+- **Known limits:** single currency (INR), payments are recorded manually (no payment gateway), no proration, no scheduled jobs in `render.yaml` yet (run billing from the UI or add cron jobs).
 
 ## Documentation
 

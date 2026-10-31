@@ -18,7 +18,7 @@ Frontend on Vercel, Django API on Render, Postgres on Neon, auth on Firebase (D-
 
 ## 3. Render (backend)
 1. Push the repo to GitHub. Render → **New → Blueprint** → pick the repo; it reads `render.yaml` and builds `backend/Dockerfile` (API only).
-2. Keep the service name `brightloop` (its URL is then `https://brightloop.onrender.com`, which `frontend/vercel.json` points at). If Render gives you a different URL, edit the three `destination`s in `frontend/vercel.json`.
+2. Keep the service name `brightloop` (its URL is then `https://odoo-private.onrender.com`, which `frontend/vercel.json` points at). If Render gives you a different URL, edit the three `destination`s in `frontend/vercel.json`.
 3. Fill the prompted secrets:
 
 | Variable | Value |
@@ -40,7 +40,7 @@ Frontend on Vercel, Django API on Render, Postgres on Neon, auth on Firebase (D-
 **How the two talk:** `frontend/vercel.json` rewrites `/api/*` (and `/admin`, `/static`) to Render, so the browser only ever sees the Vercel origin. Session cookie, CSRF and Firebase popup all stay first-party: no CORS, no cross-site cookies, no code changes. Trade-off: API calls take one extra hop through Vercel's proxy.
 
 ## 4. First admin
-Open your Vercel URL → **Sign up → Admin** → enter the `ADMIN_SIGNUP_CODE` and sign up with email (verify the link, then log in). Google sign-in does not carry the admin code; staff and admins added later by an admin can use Google because their row already exists (Staff page, no password needed).
+Open your Vercel URL → **Sign up → Admin** → enter the `ADMIN_SIGNUP_CODE` and sign up with email (verify the link, then log in). You can also use **Sign up with Google** here: enter the admin code first, and it applies to both the email form and the Google button.
 
 ## 5. Scheduled jobs (not in `render.yaml` yet)
 Billing and reminders are commands, safe to repeat (idempotent): `python manage.py run_billing` daily, `python manage.py run_notifications` hourly, `python manage.py sync_odoo` only if Odoo is on. Add two Render **Cron Jobs** with `backend/Dockerfile`, the same env vars as the web service, and those commands as the Docker command. Until then, use the **Billing → Run billing** button.
@@ -49,6 +49,6 @@ Billing and reminders are commands, safe to repeat (idempotent): `python manage.
 Copy `frontend/.env.example` to `frontend/.env.local`, set `FIREBASE_PROJECT_ID` in the root `.env`, keep `LOCAL_PASSWORD_AUTH=true`. Both login styles then work locally.
 
 ## Known limits
-- Google sign-in creates **customers**. Staff/admin via Google only works for emails that already exist (admin-added) because the registration code is typed on the email sign-up form.
+- Google sign-up supports every role: pick the role, enter the registration code (staff/admin), then use the email form or the Google button. A *Log in* with Google for an unknown email creates a customer.
 - The sign-up code for an email account is held in the browser's localStorage between sign-up and first login (cleared after the first attempt).
 - Odoo is off in production; invoices show `skipped` sync status.

@@ -85,7 +85,7 @@ function Shell() {
   );
   if (!user) return null;
 
-  const doLogout = async () => { await logout(); navigate("/login"); };
+  const doLogout = async () => { await logout(); navigate("/welcome"); };
   const cmds: Cmd[] = [
     ...items.map((n) => ({ label: `Go to ${n.label}`, Icon: n.Icon, run: () => navigate(n.to) })),
     { label: "Toggle theme", Icon: Sun, run: toggle },

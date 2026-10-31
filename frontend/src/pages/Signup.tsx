@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Briefcase, ShieldCheck, User as UserIcon, type LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "../components/Layout";
 import GoogleButton from "../components/GoogleButton";
@@ -28,6 +29,7 @@ export default function Signup() {
   const { signup, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [kind, setKind] = useState<Kind | null>(null);
+  const [code, setCode] = useState("");
 
   if (!kind) {
     return (
@@ -46,29 +48,36 @@ export default function Signup() {
   }
 
   const isCustomer = kind === "customer";
-  const fields = isCustomer
-    ? [...COMMON, ...CUSTOMER_ONLY]
-    : [...COMMON, { name: "signup_code", label: "Registration code", type: "password", required: true, autoComplete: "off", hint: `Ask an administrator for the ${kind} registration code.` } as Field];
+  const fields = isCustomer ? [...COMMON, ...CUSTOMER_ONLY] : COMMON;
+  // staff/admin: one registration code, shared by the email form and the Google button (the server checks it, D-044)
+  const needCode = () => {
+    if (!isCustomer && !code.trim()) throw new ApiError(400, { detail: `Enter the ${kind} registration code first.` });
+  };
+  const extra = isCustomer ? { account_type: kind } : { account_type: kind, signup_code: code };
 
   return (
     <AuthShell title={`Create your ${kind} account`}>
-      <button className="mb-3 text-sm text-sky-700" onClick={() => setKind(null)}>← Change account type</button>
-      {isCustomer && (
-        <>
-          <GoogleButton label="Sign up with Google" run={() => loginWithGoogle({ account_type: "customer" }).then(() => navigate("/", { replace: true }))} />
-          <p className="my-4 flex items-center gap-3 text-xs text-slate-500"><span className="h-px flex-1 bg-slate-200" />or with email<span className="h-px flex-1 bg-slate-200" /></p>
-        </>
+      <button className="mb-3 text-sm text-sky-700" onClick={() => { setKind(null); setCode(""); }}>← Change account type</button>
+      {!isCustomer && (
+        <label className="mb-4 block text-sm">
+          <span className="mb-1 block font-medium">Registration code</span>
+          <input type="password" autoComplete="off" value={code} onChange={(e) => setCode(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
+          <span className="mt-1 block text-xs text-slate-500">Ask an administrator for the {kind} registration code. It applies to both options below.</span>
+        </label>
       )}
       <ResourceForm
         key={kind}
-        submitLabel="Sign up"
+        submitLabel="Sign up with email"
         defaultValues={{ whatsapp_opt_in: false }}
         fields={fields}
-        onSubmit={(v) => signup(isCustomer
-          ? { ...v, account_type: kind, whatsapp_number: v.whatsapp_number ?? "" }
-          : { name: v.name, email: v.email, password: v.password, account_type: kind, signup_code: v.signup_code })}
+        onSubmit={(v) => {
+          needCode();
+          return signup(isCustomer ? { ...v, ...extra, whatsapp_number: v.whatsapp_number ?? "" } : { name: v.name, email: v.email, password: v.password, ...extra });
+        }}
         successMessage="Account created. We sent a verification link to your email: open it, then log in."
       />
+      <p className="my-4 flex items-center gap-3 text-xs text-slate-500"><span className="h-px flex-1 bg-slate-200" />or<span className="h-px flex-1 bg-slate-200" /></p>
+      <GoogleButton label={`Sign up as ${kind} with Google`} run={async () => { needCode(); await loginWithGoogle(extra); navigate("/", { replace: true }); }} />
       <p className="mt-4 text-sm">Already registered? <Link className="text-sky-700" to="/login">Log in</Link></p>
     </AuthShell>
   );
