@@ -1,3 +1,4 @@
+import hmac
 import logging
 
 from django.conf import settings
@@ -11,11 +12,12 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.finance.notifications.services import notify
 
-from . import firebase
+from . import demo, firebase
 from .models import Role
 from .permissions import IsAdmin, IsStaffOrAdmin
 from .serializers import (
@@ -92,6 +94,43 @@ class FirebaseLoginView(APIView):
                 notify("WELCOME", user, user, context={"customer_name": user.name or user.email})
         elif not user.is_active:
             return Response({"detail": "This account is disabled."}, status=status.HTTP_403_FORBIDDEN)
+        login(request, user)
+        return Response(UserSerializer(user).data)
+
+
+@anon_post
+class CodeCheckView(APIView):
+    """Does this staff/admin registration code match? Drives the verify animation on the sign-up page. Same comparison as
+    sign-up itself (D-044), rate limited because it answers yes/no."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "code_check"
+
+    def post(self, request):
+        expected = {Role.STAFF: settings.STAFF_SIGNUP_CODE, Role.ADMIN: settings.ADMIN_SIGNUP_CODE}.get(request.data.get("account_type"), "")
+        code = str(request.data.get("code") or "")
+        valid = bool(expected) and hmac.compare_digest(code.encode(), expected.encode())
+        return Response({"valid": valid})
+
+
+@anon_post
+class DemoLoginView(APIView):
+    """Quick sign-in for the three demo accounts. Off unless DEMO_LOGIN_ENABLED; a separate path, real auth is untouched."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        if not settings.DEMO_LOGIN_ENABLED:
+            return Response({"detail": "Demo sign-in is disabled."}, status=status.HTTP_404_NOT_FOUND)
+        key = request.data.get("role")
+        if key not in demo.DEMO:
+            return Response({"detail": "role must be user, staff or admin."}, status=status.HTTP_400_BAD_REQUEST)
+        user = demo.ensure(key)
+        if user is None:
+            return Response({"detail": "That demo email belongs to a real account."}, status=status.HTTP_409_CONFLICT)
         login(request, user)
         return Response(UserSerializer(user).data)
 

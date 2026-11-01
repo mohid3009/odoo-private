@@ -32,6 +32,8 @@ SITE_URL = (os.environ.get("SITE_URL") or os.environ.get("RENDER_EXTERNAL_URL") 
 FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
 # Dev / tests / seeded demo users keep password login; production sets this false so Firebase is the only way in.
 LOCAL_PASSWORD_AUTH = env_bool("LOCAL_PASSWORD_AUTH", True)
+# Quick sign-in buttons for the demo admin/staff/customer (POST /api/auth/demo/). On in dev; set explicitly for a deployed demo.
+DEMO_LOGIN_ENABLED = env_bool("DEMO_LOGIN_ENABLED", DEBUG)
 # signInWithPopup (Google) needs window.opener; Django's default "same-origin" would break it.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
@@ -126,6 +128,8 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    # ponytail: per-process in-memory counter (x gunicorn workers); move to a shared cache if this needs a hard ceiling
+    "DEFAULT_THROTTLE_RATES": {"code_check": "30/min"},
 }
 
 # --- email (D-007) ---

@@ -1,42 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import Hero40 from "@/components/originkit/hero-40";
-import { useQuery } from "@tanstack/react-query";
-import { api, Health } from "../api/client";
 
 export default function BrightloopIntro() {
-  const [showSystemHealth, setShowSystemHealth] = useState(false);
-
-  // Background health query for Odoo/App DB status
-  const { data: healthData } = useQuery({
-    queryKey: ["healthz"],
-    queryFn: () => api.get<Health>("/api/healthz").catch(() => null),
-    retry: false,
-    staleTime: 30000,
-  });
-
   return (
     <div className="min-h-screen w-full bg-[#0B0B0D] text-[#C8C8D0] flex flex-col items-center justify-start overflow-x-hidden selection:bg-white/20 selection:text-white">
-      {/* Optional diagnostic bar for Odoo backend */}
-      {healthData && (
-        <aside
-          aria-label="System diagnostic bar"
-          className="w-full bg-[#0E0E12] border-b border-white/[0.08] px-6 py-2 text-xs text-[#9A9AA3] flex items-center justify-between z-50 sticky top-0"
-        >
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Odoo Sync: <strong className="text-white">{healthData.odoo?.status || "Ready"}</strong></span>
-            </span>
-            <span className="hidden sm:inline text-white/[0.15]">|</span>
-            <span className="hidden sm:inline">Database: <strong className="text-white">{healthData.app_db}</strong></span>
-          </div>
-          <Link to="/login" className="text-xs text-white hover:underline">
-            Go to Billing Console →
-          </Link>
-        </aside>
-      )}
-
       {/* Fullscreen 100vw x 100vh Hero with Dither & Human Hand Hover Reveal */}
       <div className="w-full h-screen overflow-hidden">
         <Hero40 />

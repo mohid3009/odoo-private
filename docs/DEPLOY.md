@@ -45,6 +45,11 @@ Open your Vercel URL → **Sign up → Admin** → enter the `ADMIN_SIGNUP_CODE`
 ## 5. Scheduled jobs (not in `render.yaml` yet)
 Billing and reminders are commands, safe to repeat (idempotent): `python manage.py run_billing` daily, `python manage.py run_notifications` hourly, `python manage.py sync_odoo` only if Odoo is on. Add two Render **Cron Jobs** with `backend/Dockerfile`, the same env vars as the web service, and those commands as the Docker command. Until then, use the **Billing → Run billing** button.
 
+## Demo mode (on for now)
+- **Registration codes:** `ADMIN_SIGNUP_CODE=123456`, `STAFF_SIGNUP_CODE=246813` (set in `render.yaml`), shown in a small note on the sign-up page.
+- **Quick demo sign-in:** three buttons on the login page log in as `user1@gmail.com`, `staff1@gmail.com` and `admin1@gmail.com` (password `Demo@Brightloop1`, also valid for local password login in dev). The customer comes with a few subscriptions, invoices and payments. It is a separate endpoint (`POST /api/auth/demo/`, 404 unless `DEMO_LOGIN_ENABLED=true`), so Firebase login is untouched. If one of those emails already belongs to a real account, the endpoint refuses (409) instead of logging anyone into it.
+- **Before real customers use it:** set `DEMO_LOGIN_ENABLED=false` on Render, replace both codes with long random strings, and set `VITE_SHOW_DEMO=false` on Vercel (hides the note and the buttons). These codes are public by design in demo mode: anyone can create an admin with `123456`.
+
 ## Local development with Firebase
 Copy `frontend/.env.example` to `frontend/.env.local`, set `FIREBASE_PROJECT_ID` in the root `.env`, keep `LOCAL_PASSWORD_AUTH=true`. Both login styles then work locally.
 

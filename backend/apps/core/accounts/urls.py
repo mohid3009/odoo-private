@@ -6,6 +6,8 @@ from . import views
 urlpatterns = [
     path("auth/csrf/", views.CsrfView.as_view()),
     path("auth/firebase/", views.FirebaseLoginView.as_view()),
+    path("auth/check-code/", views.CodeCheckView.as_view()),
+    path("auth/demo/", views.DemoLoginView.as_view()),  # 404 unless DEMO_LOGIN_ENABLED
     path("auth/logout/", views.LogoutView.as_view()),
     path("auth/me/", views.MeView.as_view()),
     path("staff/", views.StaffListCreateView.as_view()),

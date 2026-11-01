@@ -15,6 +15,7 @@ interface Auth {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   loginWithGoogle: (extra?: Extra) => Promise<User>;
+  demoLogin: (role: "user" | "staff" | "admin") => Promise<User>;
   signup: (body: Extra) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -47,6 +48,9 @@ const MESSAGES: Record<string, string> = {
   "auth/popup-closed-by-user": "Sign-in was cancelled.",
   "auth/popup-blocked": "Your browser blocked the sign-in window. Allow pop-ups and retry.",
   "auth/network-request-failed": "Network error. Please try again.",
+  "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "Sign-in isn't configured: set the VITE_FIREBASE_* values (see frontend/.env.example) and rebuild.",
+  "auth/invalid-api-key": "Sign-in isn't configured: set the VITE_FIREBASE_* values (see frontend/.env.example) and rebuild.",
+  "auth/unauthorized-domain": "This address isn't authorised for sign-in. Add it under Firebase → Authentication → Settings → Authorized domains.",
 };
 // ResourceForm shows ApiError bodies, so Firebase failures are re-thrown in that shape.
 const fail = (e: unknown): never => {
@@ -118,6 +122,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return exchange(fb);
   };
 
+  // Quick sign-in for the demo accounts: a separate server endpoint (404 unless DEMO_LOGIN_ENABLED), no Firebase involved.
+  const demoLogin = async (role: "user" | "staff" | "admin") => {
+    await api.get("/api/auth/csrf/");
+    const u = await api.post<User>("/api/auth/demo/", { role });
+    dropCache();
+    setUser(u);
+    return u;
+  };
+
   // Creates the Firebase account and sends the verification link. The person is not signed in until they verify and log in.
   const signup = async (body: Extra) => {
     const { email, password, ...extra } = body;
@@ -147,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: data ?? null, loading: isLoading, login, loginWithGoogle, signup, resetPassword, logout, setUser }}>
+    <Ctx.Provider value={{ user: data ?? null, loading: isLoading, login, loginWithGoogle, demoLogin, signup, resetPassword, logout, setUser }}>
       {children}
     </Ctx.Provider>
   );
