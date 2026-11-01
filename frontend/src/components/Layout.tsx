@@ -70,8 +70,10 @@ function Shell() {
   const toast = useToast();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [expanded, setExpanded] = useState(() => { try { return localStorage.getItem("rail-expanded") === "1"; } catch { return false; } });
-  const toggleExpanded = () => setExpanded((e) => { try { localStorage.setItem("rail-expanded", e ? "0" : "1"); } catch { /* private mode */ } return !e; });
+  // Expanded the first time the app opens; after that the visitor's own choice sticks. (New key: an old "collapsed" value from the
+  // earlier default must not keep hiding the labels.)
+  const [expanded, setExpanded] = useState(() => { try { return localStorage.getItem("rail-expanded-v2") !== "0"; } catch { return true; } });
+  const toggleExpanded = () => setExpanded((e) => { try { localStorage.setItem("rail-expanded-v2", e ? "0" : "1"); } catch { /* private mode */ } return !e; });
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -102,11 +104,12 @@ function Shell() {
   const row = `tap relative shrink-0 rounded-full ${expanded ? "flex w-full items-center gap-3 px-3.5" : "grid w-12 place-items-center"}`;
 
   return (
-    <div className="min-h-screen">
+    // md+: a fixed-height shell. The header and the rail never scroll; only the content column does. Phones keep the normal page flow.
+    <div className="min-h-screen md:h-screen md:overflow-hidden">
       <Backdrop />
-      <div className="mx-auto max-w-[1500px] px-4 pb-28 pt-5 md:px-8 md:pb-10 md:pt-8">
+      <div className="mx-auto flex max-w-[1500px] flex-col px-4 pb-28 pt-5 md:h-full md:px-8 md:pb-6 md:pt-8">
         {/* Greeting row: brand mark, hello + where you are, then search and round glass buttons */}
-        <header className="no-print flex flex-wrap items-center gap-x-4 gap-y-3">
+        <header className="no-print flex flex-wrap items-center gap-x-4 gap-y-3 md:shrink-0">
           <Link to="/" aria-label="Brightloop home" className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-accent"><Repeat size={34} strokeWidth={2.2} /></Link>
           <div className="min-w-0 flex-1 basis-56">
             <h1 className="truncate text-2xl font-medium tracking-tight sm:text-[28px]">Hello, {first}!</h1>
@@ -142,9 +145,9 @@ function Shell() {
           </div>
         </header>
 
-        <div className="mt-6 flex items-start gap-5 md:gap-6">
-          {/* Floating icon rail (md+): one glass pill; the active item is a filled circle that slides */}
-          <motion.aside animate={{ width: expanded ? 232 : 76 }} transition={{ duration: 0.28, ease: EASE }} className="no-print sticky top-5 hidden h-[min(720px,calc(100vh-2.5rem))] shrink-0 self-start overscroll-contain md:block">
+        <div className="mt-6 flex items-start gap-5 md:min-h-0 md:flex-1 md:items-stretch md:gap-6">
+          {/* Floating icon rail (md+): one glass pill pinned to the shell height; the active item is a filled circle that slides */}
+          <motion.aside animate={{ width: expanded ? 232 : 76 }} transition={{ duration: 0.28, ease: EASE }} className="no-print hidden shrink-0 overscroll-contain md:block md:h-full">
             <Glass flat className={`flex h-full flex-col overflow-hidden p-3 ${expanded ? "!rounded-[36px]" : "items-center !rounded-full"}`}>
               <button aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"} aria-expanded={expanded} title={expanded ? "Collapse" : "Expand"} onClick={toggleExpanded} className={`${row} mb-1 h-12 text-fg2 hover:bg-[var(--sel)] hover:text-fg`}>
                 {expanded ? <ChevronsLeft size={19} /> : <ChevronsRight size={19} />}
@@ -177,7 +180,7 @@ function Shell() {
           </motion.aside>
 
           {/* Route content crossfades; non-dashboard pages sit on a sheet so the CRUD screens stay legible */}
-          <motion.main key={pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }} className="min-w-0 flex-1">
+          <motion.main key={pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }} className="min-w-0 flex-1 md:-m-2 md:h-[calc(100%+1rem)] md:overflow-y-auto md:overflow-x-hidden md:overscroll-contain md:p-2">
             {pathname === "/" ? <Outlet /> : <div className="sheet"><Outlet /></div>}
           </motion.main>
         </div>

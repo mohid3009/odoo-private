@@ -52,6 +52,7 @@ export default function Signup() {
     );
   }
 
+  const meta = KINDS.find((k) => k.kind === kind)!;
   const isCustomer = kind === "customer";
   const fields = isCustomer ? [...COMMON, ...CUSTOMER_ONLY] : COMMON;
   // staff/admin: one registration code, shared by the email form and the Google button (the server checks it, D-044)
@@ -71,6 +72,15 @@ export default function Signup() {
 
   return (
     <AuthShell title={`Create your ${kind} account`}>
+      {/* which account type this form creates, unmissable at the top */}
+      <div className="mb-4 flex items-center gap-3 rounded-xl border bg-[var(--sel)] p-3" role="status">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-sky-700 shadow-sm"><meta.Icon size={18} /></span>
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-wide text-slate-500">You are creating a</p>
+          <p className="font-semibold">{meta.label} account</p>
+          <p className="text-xs text-slate-500">{meta.blurb}</p>
+        </div>
+      </div>
       <button className="mb-3 text-sm text-sky-700" onClick={() => { setKind(null); setCode(""); setCodeStatus("idle"); }}>← Change account type</button>
       {!isCustomer && (
         <div className="mb-4 text-sm">
