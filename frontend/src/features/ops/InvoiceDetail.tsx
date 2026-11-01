@@ -1,3 +1,4 @@
+import PageLoader from "../../components/PageLoader";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
@@ -122,7 +123,7 @@ export default function InvoiceDetail() {
   const [note, setNote] = useState("");
   const { data: inv, isLoading, isError } = useQuery({ queryKey: ["invoices", "detail", id], queryFn: () => api.get<any>(`/api/invoices/${id}/`) });
 
-  if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError || !inv) return <p className="py-6 text-red-700">Invoice not found. <Link className="text-sky-700" to="/invoices">Back to the list</Link></p>;
 
   const act = async (action: "confirm" | "cancel" | "send", message = "", body?: unknown) => {

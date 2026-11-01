@@ -1,3 +1,4 @@
+import PageLoader from "../../components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../api/client";
@@ -8,7 +9,7 @@ export default function InvoicePrint() {
   const { id } = useParams();
   const { data: inv, isLoading, isError } = useQuery({ queryKey: ["invoices", "print", id], queryFn: () => api.get<any>(`/api/invoices/${id}/print/`) });
 
-  if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError || !inv) return <p className="py-6 text-red-700">Invoice not found.</p>;
   const c = inv.customer_details;
 

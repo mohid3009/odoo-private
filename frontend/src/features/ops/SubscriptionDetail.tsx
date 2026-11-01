@@ -1,3 +1,4 @@
+import PageLoader from "../../components/PageLoader";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
@@ -58,7 +59,7 @@ export default function SubscriptionDetail() {
   const [error, setError] = useState("");
   const { data: sub, isLoading, isError } = useQuery({ queryKey: ["subscriptions", "detail", id], queryFn: () => api.get<any>(`/api/subscriptions/${id}/`) });
 
-  if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError || !sub) return <p className="py-6 text-red-700">Subscription not found. <Link className="text-sky-700" to="/subscriptions">Back to the list</Link></p>;
 
   const refresh = (fresh: any) => {

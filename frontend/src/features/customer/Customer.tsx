@@ -1,3 +1,4 @@
+import PageLoader from "../../components/PageLoader";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { CheckCircle2, CreditCard, Landmark, Printer, ShieldCheck, Smartphone } from "lucide-react";
@@ -111,7 +112,7 @@ const Row = ({ k, v, bold }: { k: string; v: string; bold?: boolean }) => (
 export function MyInvoiceDetail() {
   const { id } = useParams();
   const q = useQuery({ queryKey: ["my-invoice", id], queryFn: () => api.get<any>(`/api/invoices/${id}/`) });
-  if (q.isLoading) return <p className="text-slate-500">Loading…</p>;
+  if (q.isLoading) return <PageLoader />;
   if (q.isError || !q.data) return <p className="text-red-700">We couldn't find that invoice. <Link className="text-sky-700" to="/my/invoices">Back to invoices</Link></p>;
   const inv = q.data;
   const payable = inv.status === "confirmed" && Number(inv.amount_due) > 0;
@@ -190,7 +191,7 @@ export function PayInvoice() {
   const [error, setError] = useState("");
   const [receipt, setReceipt] = useState<any>(null);
 
-  if (q.isLoading) return <p className="text-slate-500">Loading…</p>;
+  if (q.isLoading) return <PageLoader />;
   if (q.isError || !q.data) return <p className="text-red-700">We couldn't find that invoice. <Link className="text-sky-700" to="/my/invoices">Back to invoices</Link></p>;
   const inv = q.data;
 

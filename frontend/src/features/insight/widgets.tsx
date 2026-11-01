@@ -12,7 +12,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { BarRise, Donut, Gauge, TrendChart } from "../../components/charts/charts";
 import MoneyText from "../../components/MoneyText";
 import { CountUp, Empty, ErrorState, Glass, InfoTip, Segmented, Skeleton, WidgetCard } from "../../components/ui/glass";
-import { toCents } from "../../lib/money";
+import { centsToStr, toCents } from "../../lib/money";
 
 export type Counts = Record<"active" | "paused" | "pending" | "open" | "overdue" | "paid", number | undefined>;
 
@@ -260,6 +260,54 @@ export function QuickActions({ className }: { className: string }) {
           </Magnetic>
         ))}
       </div>
+    </WidgetCard>
+  );
+}
+
+/* ---------- Payments due (customer dashboard): unpaid invoices with a Pay now button on each ---------- */
+interface DueRow { id: number; number: string; due_date: string; amount_due: string; is_overdue: boolean; days_overdue: number }
+
+export function PaymentsDue({ className }: { className: string }) {
+  const q = useQuery({ queryKey: ["home", "due"], queryFn: () => api.get<Page<DueRow>>("/api/invoices/?status=confirmed&page_size=50") });
+  const rows = [...(q.data?.results ?? [])].filter((r) => (toCents(r.amount_due) ?? 0) > 0).sort((a, b) => a.due_date.localeCompare(b.due_date));
+  const total = centsToStr(rows.reduce((s, r) => s + (toCents(r.amount_due) ?? 0), 0)); // integer cents, never float money
+  const late = rows.filter((r) => r.is_overdue).length;
+  const shown = rows.slice(0, 4);
+  return (
+    <WidgetCard className={className} title="Payments due" info="Invoices waiting for payment, earliest due date first. Pay online in a few clicks.">
+      {q.isError ? <ErrorState onRetry={() => q.refetch()} /> : q.isLoading ? (
+        <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+      ) : rows.length === 0 ? (
+        <Empty Icon={CheckCircle2} text="You're all paid up. Nothing is due right now." action={<Link to="/my/invoices" className="tap rounded-full bg-[var(--sel)] px-4 py-2 text-xs font-medium">View my invoices</Link>} />
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs text-fg2">Total to pay</p>
+              <p className="tabular-nums text-3xl font-semibold tracking-tight"><MoneyText value={total} /></p>
+            </div>
+            {late > 0 && <span className="pill-bad rounded-full px-3 py-1 text-xs font-semibold">{late} overdue</span>}
+          </div>
+          <ul className="space-y-2">
+            {shown.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] border border-[var(--glass-border)] bg-[var(--tile)] px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <Link to={`/my/invoices/${r.id}`} className="font-medium hover:text-accent">{r.number}</Link>
+                  <p className={`text-xs ${r.is_overdue ? "font-medium text-[#FF453A]" : "text-muted"}`}>
+                    {r.is_overdue ? `Overdue by ${r.days_overdue} day${r.days_overdue === 1 ? "" : "s"}` : `Due ${r.due_date}`}
+                  </p>
+                </div>
+                <span className="tabular-nums text-lg font-semibold"><MoneyText value={r.amount_due} /></span>
+                <Link to={`/my/pay/${r.id}`} className="tap inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:brightness-110"><CreditCard size={16} />Pay now</Link>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center justify-between text-xs text-fg2">
+            <span>{rows.length > shown.length ? `+ ${rows.length - shown.length} more unpaid` : `${rows.length} unpaid invoice${rows.length === 1 ? "" : "s"}`}</span>
+            <Link to="/my/invoices" className="font-medium hover:text-fg">View all invoices →</Link>
+          </div>
+        </div>
+      )}
     </WidgetCard>
   );
 }

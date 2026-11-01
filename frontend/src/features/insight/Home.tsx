@@ -7,7 +7,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import StatusBadge from "../../components/StatusBadge";
 import { STAGGER } from "../../components/ui/glass";
 import {
-  ActivityFeed, CollectionGauge, Insight, InvoicesBars, InvoicesTable, Kpi, ProfileCard, QuickActions, StatusDonut, SystemStatus,
+  ActivityFeed, CollectionGauge, Insight, InvoicesBars, InvoicesTable, Kpi, PaymentsDue, ProfileCard, QuickActions, StatusDonut, SystemStatus,
   TrendWidget, type Counts, type Summary,
 } from "./widgets";
 
@@ -59,6 +59,9 @@ export default function Home() {
         <Kpi className="md:col-span-3 xl:col-span-3" Icon={Wallet} label="Outstanding" value={money(k?.outstanding)} format={(v) => inr.format(v)} sub={n.open === undefined ? undefined : `${n.open} open`} color="#0a84ff" info="Amount still owed on issued invoices." />
         <Kpi className="md:col-span-3 xl:col-span-3" Icon={AlertTriangle} label="Overdue" value={k?.overdue_count} sub={k ? inr.format(Number(k.overdue_amount)) : undefined} color="#ff9f0a" info="Open invoices past their due date, and the amount they hold. Lower is better." />
         <Kpi highlight className="md:col-span-3 xl:col-span-3" Icon={Banknote} label="Revenue collected" value={money(k?.revenue_collected)} format={(v) => inr.format(v)} color="#0071e3" info="Completed payments received, all time." />
+
+        {/* Customers: what they owe and a Pay now button, right under the numbers */}
+        {user.role === "customer" && <PaymentsDue className="md:col-span-6 xl:col-span-12" />}
 
         {/* Row 2: wide trend, gauge, profile */}
         <TrendWidget q={summary} className="md:col-span-6 xl:col-span-6" />

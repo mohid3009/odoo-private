@@ -1,3 +1,4 @@
+import PageLoader from "./PageLoader";
 import { ReactNode, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -28,7 +29,7 @@ export default function DataTable<T extends { id: number | string }>({ queryKey,
     placeholderData: (prev) => prev,
   });
 
-  if (isLoading) return <p className="py-6 text-slate-500">Loading…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError || !data) return <p className="py-6 text-red-700">Could not load data.</p>;
 
   const pages = Math.max(1, Math.ceil(data.count / 25));

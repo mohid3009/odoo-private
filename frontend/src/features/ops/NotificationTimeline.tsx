@@ -1,3 +1,4 @@
+import PageLoader from "../../components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Page } from "../../api/types";
@@ -13,7 +14,7 @@ export default function NotificationTimeline({ objectType, objectId }: { objectT
   return (
     <section aria-label="Notifications">
       <h2 className="mb-2 font-semibold">Notifications</h2>
-      {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+      {isLoading && <PageLoader compact />}
       {isError && <p className="text-sm text-red-700">Could not load notifications.</p>}
       {data && data.results.length === 0 && <p className="text-sm text-slate-500">Nothing has been sent about this yet.</p>}
       {data && data.results.length > 0 && (
