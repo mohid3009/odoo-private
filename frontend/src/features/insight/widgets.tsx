@@ -240,9 +240,15 @@ const STAFF_ACTIONS = [
   { to: "/invoices", label: "Invoices", Icon: Receipt },
   { to: "/catalog", label: "Catalog", Icon: Package },
 ];
+const CUSTOMER_ACTIONS = [
+  { to: "/my/invoices", label: "Pay an invoice", Icon: CreditCard },
+  { to: "/my/subscriptions", label: "My subscriptions", Icon: Repeat },
+  { to: "/my/payments", label: "Payment history", Icon: Receipt },
+  { to: "/profile", label: "Edit profile", Icon: UserCircle },
+];
 export function QuickActions({ className }: { className: string }) {
   const { user } = useAuth();
-  const items = user?.role === "customer" ? [{ to: "/profile", label: "Edit profile", Icon: UserCircle }] : STAFF_ACTIONS;
+  const items = user?.role === "customer" ? CUSTOMER_ACTIONS : STAFF_ACTIONS;
   return (
     <WidgetCard className={className} title="Quick actions" info="Shortcuts to the things you do most.">
       <div className="grid grid-cols-2 gap-3 [&_a]:min-w-0 [&_a]:break-words [&_a]:px-2">

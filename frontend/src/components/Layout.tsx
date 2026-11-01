@@ -7,6 +7,7 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import type { Role } from "../api/types";
+import { customerNav } from "../features/customer/routes";
 import { insightNav } from "../features/insight/routes";
 import { opsNav } from "../features/ops/routes";
 import { useTheme, ThemeProvider } from "../lib/theme";
@@ -19,6 +20,7 @@ import Grainient from "./ui/Grainient";
 const NAV: NavItem[] = [
   ...insightNav,
   ...opsNav,
+  ...customerNav,
   { to: "/profile", label: "Profile", roles: ["admin", "staff", "customer"] },
 ];
 
@@ -26,6 +28,7 @@ const HOME_LABEL: Record<Role, string> = { admin: "Dashboard", staff: "Dashboard
 const ICONS: Record<string, LucideIcon> = {
   "/": LayoutDashboard, "/discounts": Percent, "/subscriptions": Repeat, "/invoices": FileText, "/payments": CreditCard,
   "/billing": Zap, "/catalog": Package, "/notifications": Bell, "/staff": Users, "/profile": UserCircle,
+  "/my/subscriptions": Repeat, "/my/invoices": FileText, "/my/payments": CreditCard,
 };
 
 // First colour = page background (#f5f5f7 light, #000 dark) so the edges blend into the UI.
@@ -141,14 +144,14 @@ function Shell() {
 
         <div className="mt-6 flex items-start gap-5 md:gap-6">
           {/* Floating icon rail (md+): one glass pill; the active item is a filled circle that slides */}
-          <motion.aside animate={{ width: expanded ? 232 : 76 }} transition={{ duration: 0.28, ease: EASE }} className="no-print sticky top-5 hidden h-[min(720px,calc(100vh-2.5rem))] shrink-0 md:block">
-            <Glass flat className={`flex h-full flex-col p-3 ${expanded ? "!rounded-[36px]" : "items-center !rounded-full"}`}>
+          <motion.aside animate={{ width: expanded ? 232 : 76 }} transition={{ duration: 0.28, ease: EASE }} className="no-print sticky top-5 hidden h-[min(720px,calc(100vh-2.5rem))] shrink-0 self-start overscroll-contain md:block">
+            <Glass flat className={`flex h-full flex-col overflow-hidden p-3 ${expanded ? "!rounded-[36px]" : "items-center !rounded-full"}`}>
               <button aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"} aria-expanded={expanded} title={expanded ? "Collapse" : "Expand"} onClick={toggleExpanded} className={`${row} mb-1 h-12 text-fg2 hover:bg-[var(--sel)] hover:text-fg`}>
                 {expanded ? <ChevronsLeft size={19} /> : <ChevronsRight size={19} />}
                 {expanded && <span className="truncate text-sm font-medium">Collapse</span>}
               </button>
               {/* No scrolling: when the window is short the items compress (flex-1, 36-48px) instead of overflowing */}
-              <nav aria-label="Main" className={`flex min-h-0 flex-1 flex-col gap-1 ${expanded ? "" : "items-center"}`}>
+              <nav aria-label="Main" className={`flex min-h-0 flex-1 flex-col gap-1 overflow-hidden ${expanded ? "" : "items-center"}`}>
                 <LayoutGroup id="nav">
                   {items.map((n) => (
                     <NavLink key={n.to} to={n.to} end={n.end} title={expanded ? undefined : n.label} aria-label={n.label} className={({ isActive }) => `${row} min-h-9 max-h-12 flex-1 transition-colors ${isActive ? "text-[var(--bg)]" : "text-fg2 hover:bg-[var(--sel)] hover:text-fg"}`}>

@@ -119,6 +119,16 @@ def record_payment(invoice, user, data):
 
 
 @transaction.atomic
+def pay_online(invoice, user, method):
+    """A customer pays the full balance of their OWN invoice through the demo gateway. No real money moves, so the view
+    only allows it while DEMO_PAYMENTS_ENABLED; replace this with a real gateway (and its webhook) before taking real payments."""
+    inv = _lock_invoice(invoice.pk)
+    if inv.customer_id != user.id:
+        raise PermissionDenied("This is not your invoice.")
+    return _record(inv, user, {"amount": inv.amount_due, "method": method, "note": "Online payment (demo gateway)"})
+
+
+@transaction.atomic
 def retry_payment(payment_id, user, data):
     _require_staff(user)
     inv = _lock_invoice(Payment.objects.values_list("invoice_id", flat=True).get(pk=payment_id))

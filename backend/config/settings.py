@@ -34,6 +34,8 @@ FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
 LOCAL_PASSWORD_AUTH = env_bool("LOCAL_PASSWORD_AUTH", True)
 # Quick sign-in buttons for the demo admin/staff/customer (POST /api/auth/demo/). On in dev; set explicitly for a deployed demo.
 DEMO_LOGIN_ENABLED = env_bool("DEMO_LOGIN_ENABLED", DEBUG)
+# Customer "Pay now" (POST /api/invoices/{id}/pay/): a DEMO gateway, no real money moves. Off in production until a real gateway replaces it.
+DEMO_PAYMENTS_ENABLED = env_bool("DEMO_PAYMENTS_ENABLED", DEBUG)
 # signInWithPopup (Google) needs window.opener; Django's default "same-origin" would break it.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 

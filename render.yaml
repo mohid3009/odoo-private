@@ -20,6 +20,7 @@ services:
       # demo values (shown on the sign-up page for now); replace with long random strings before real customers use this
       - { key: STAFF_SIGNUP_CODE, value: "246813" }
       - { key: ADMIN_SIGNUP_CODE, value: "123456" }
+      - { key: DEMO_PAYMENTS_ENABLED, value: "true" }  # customer "Pay now" uses a DEMO gateway (no real money); set false until a real gateway exists
       - { key: DEMO_LOGIN_ENABLED, value: "true" }   # quick sign-in buttons for admin1/staff1/user1@gmail.com; set false to switch off
       # optional: real email (leave EMAIL_HOST empty to keep the console backend)
       - { key: EMAIL_BACKEND, value: "django.core.mail.backends.smtp.EmailBackend" }

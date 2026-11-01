@@ -1,10 +1,14 @@
 import django_filters
+from django.conf import settings
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from apps.core.accounts.permissions import IsAdmin, IsStaffOrAdmin
+from apps.core.accounts.permissions import IsAdmin, IsCustomer, IsStaffOrAdmin
+from apps.core.billing.models import Invoice
 
 from . import services
 from .models import Payment
@@ -48,6 +52,30 @@ def invoice_payments(request, inv, view):
     rows = payments_queryset(request.user).filter(invoice=inv)
     page = view.paginate_queryset(rows)
     return view.get_paginated_response(payment_serializer_for(request.user)(page, many=True, context={"request": request}).data)
+
+
+ONLINE_METHODS = (Payment.Method.CARD, Payment.Method.UPI, Payment.Method.BANK_TRANSFER)
+
+
+class CustomerPayView(APIView):
+    """POST /invoices/{id}/pay/ {method}: a customer pays the whole balance of their own invoice (demo gateway).
+    404 for someone else's invoice (rule 8) and while DEMO_PAYMENTS_ENABLED is off; 409 if it is not payable."""
+
+    permission_classes = [IsCustomer]
+
+    def post(self, request, pk):
+        if not settings.DEMO_PAYMENTS_ENABLED:
+            return Response({"detail": "Online payment is not enabled on this server."}, status=status.HTTP_404_NOT_FOUND)
+        inv = get_object_or_404(Invoice.objects.for_user(request.user).exclude(status=Invoice.Status.DRAFT), pk=pk)
+        method = request.data.get("method")
+        if method not in ONLINE_METHODS:
+            return Response({"method": f"Choose one of: {', '.join(ONLINE_METHODS)}."}, status=status.HTTP_400_BAD_REQUEST)
+        payment, locked = services.pay_online(inv, request.user, method)
+        return Response(
+            {"payment": {"id": payment.pk, "amount": str(payment.amount), "method": payment.method, "payment_date": payment.payment_date.isoformat()},
+             "invoice_state": services.invoice_state(locked)},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):

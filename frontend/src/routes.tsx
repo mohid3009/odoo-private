@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import RoleGuard from "./components/RoleGuard";
+import { customerRoutes } from "./features/customer/routes";
 import { insightRoutes } from "./features/insight/routes";
 import { opsRoutes } from "./features/ops/routes";
 import BrightloopIntro from "./pages/BrightloopIntro";
@@ -37,6 +38,7 @@ export default function AppRoutes() {
       <Route element={<RoleGuard><Layout /></RoleGuard>}>
         {insightRoutes()}
         {opsRoutes()}
+        {customerRoutes()}
         <Route path="profile" element={<Profile />} />
         <Route path="403" element={<Forbidden />} />
         <Route path="*" element={<NotFound />} />
